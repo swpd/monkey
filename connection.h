@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
-/*  Monkey HTTP Daemon
- *  ------------------
+/*  Duda I/O
+ *  --------
  *  Copyright (C) 2013, Zeying Xie <swpdtz at gmail dot com>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -73,7 +73,7 @@ typedef struct mariadb_conn {
 
 static inline int mariadb_set_connect_cb(mariadb_conn_t *conn, mariadb_connect_cb *cb)
 {
-    if (conn->connect_cb == NULL)
+    if (!conn->connect_cb)
     {
         conn->connect_cb = cb;
         return MARIADB_OK;
@@ -83,7 +83,7 @@ static inline int mariadb_set_connect_cb(mariadb_conn_t *conn, mariadb_connect_c
 
 static inline int mariadb_set_disconnect_cb(mariadb_conn_t *conn, mariadb_disconnect_cb *cb)
 {
-    if (conn->disconnect_cb == NULL)
+    if (!conn->disconnect_cb)
     {
         conn->disconnect_cb = cb;
         return MARIADB_OK;
