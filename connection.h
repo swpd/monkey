@@ -60,6 +60,7 @@ typedef void (mariadb_connect_cb)(struct mariadb_conn *conn, int status);
 typedef void (mariadb_disconnect_cb)(struct mariadb_conn *conn, int status);
 
 typedef struct mariadb_conn {
+    struct duda_request *dr;
     mariadb_conn_config_t config;
     MYSQL *mysql, *mysql_ret;
     int fd;
@@ -69,6 +70,7 @@ typedef struct mariadb_conn {
     mariadb_disconnect_cb *disconnect_cb;
 
     struct mk_list queries;
+    struct mk_list _head;
 } mariadb_conn_t;
 
 static inline int mariadb_set_connect_cb(mariadb_conn_t *conn, mariadb_connect_cb *cb)
@@ -91,9 +93,7 @@ static inline int mariadb_set_disconnect_cb(mariadb_conn_t *conn, mariadb_discon
     return MARIADB_ERR;
 }
 
-int mariadb_connect(mariadb_conn_t *conn);
-int mariadb_disconnect(mariadb_conn_t *conn);
-int mariadb_conn_add_query(mariadb_conn_t *conn, struct duda_request *dr,
-                           char *query_str, mariadb_query_cb *cb, void *privdata);
+int mariadb_conn_add_query(mariadb_conn_t *conn, char *query_str,
+                           mariadb_query_cb *cb, void *privdata);
 
 #endif

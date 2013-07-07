@@ -24,14 +24,17 @@
 
 #include "connection.h"
 
+#define FREE(p) if (p) { monkey->mem_free(p); p = NULL; }
+
 pthread_key_t mariadb_conn_list;
 
 typedef struct duda_api_mariadb {
-    int (*connect)(mariadb_conn_t *);
+    int (*connect)(mariadb_conn_t *, duda_request_t *);
     int (*disconnect)(mariadb_conn_t *);
     int (*set_connect_cb)(mariadb_conn_t *, mariadb_connect_cb *);
     int (*set_disconnect_cb)(mariadb_conn_t *, mariadb_disconnect_cb *);
-    int (*query)(mariadb_conn_t *, struct duda_request *, char *, mariadb_query_cb *, void *);
+    unsigned long (*escape)(mariadb_conn_t *, char *, const char *, unsigned long);
+    int (*query)(mariadb_conn_t *, char *, mariadb_query_cb *, void *);
     int (*abort)(mariadb_query_t *);
 } mariadb_object_t;
 
@@ -41,13 +44,22 @@ static inline int mariadb_init_keys()
 {
     if (pthread_key_create(&mariadb_conn_list, NULL) != 0)
         return MARIADB_ERR;
+
+    struct mk_list *conn_list = monkey->mem_alloc(sizeof(struct mk_list));
+    mk_list_init(conn_list);
+    pthread_setspecific(mariadb_conn_list, (void *) conn_list);
+
     return MARIADB_OK;
 }
 
-int mariadb_read(int fd, struct duda_request *dr);
-int mariadb_write(int fd, struct duda_request *dr);
-int mariadb_error(int fd, struct duda_request *dr);
-int mariadb_close(int fd, struct duda_request *dr);
-int mariadb_timeout(int fd, struct duda_request *dr);
+mariadb_conn_t *mariadb_init();
+int mariadb_connect(mariadb_conn_t *conn, duda_request_t *dr);
+int mariadb_disconnect(mariadb_conn_t *conn);
+
+int mariadb_read(int fd, void *data);
+int mariadb_write(int fd, void *data);
+int mariadb_error(int fd, void *data);
+int mariadb_close(int fd, void *data);
+int mariadb_timeout(int fd, void *data);
 
 #endif

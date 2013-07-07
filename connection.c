@@ -19,31 +19,10 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef MARIADB_QUERY_H
-#define MARIADB_QUERY_H
+#include "connection.h"
 
-#include <mysql/mysql.h>
-
-typedef enum {
-    QUERY_ABORT_NONE, QUERY_ABORT_QUERY, QUERY_ABORT_RESULT
-} mariadb_query_abort_t;
-
-typedef void (mariadb_query_cb)(void *privdata, unsigned long n_fields,
-              char **fields, char **values);
-
-typedef struct mariadb_query {
-    char *query_str;
-    MYSQL_RES *result;
-    MYSQL_ROW row;
-    int error;
-    mariadb_query_abort_t abort;
-
-    void *privdata;
-    mariadb_query_cb *callback;
-
-    struct mk_list _head;
-} mariadb_query_t;
-
-int mariadb_query_abort(mariadb_query_t *query);
-
-#endif
+int mariadb_conn_add_query(mariadb_conn_t *conn, char *query_str,
+                           mariadb_query_cb *cb, void *privdata)
+{
+    return MARIADB_OK;
+}
