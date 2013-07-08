@@ -19,11 +19,38 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include "duda_api.h"
 #include "mariadb.h"
 
-#define mariadb_real_escape_string(conn, to, from, length) \
-    mysql_real_escape_string(conn->mysql, to, from ,lengeth)
+static int mariadb_process_result(mariadb_conn_t *conn)
+{
+    return MARIADB_OK;
+}
+
+static void mariadb_process_query(mariadb_conn_t *conn)
+{
+    conn->state = CONN_STATE_QUERY;
+    mariadb_query_t *query = mk_list_entry_first(&conn->queries, mariadb_query_t, _head);
+    int status;
+    if (query->query_str) {
+        status = mysql_real_query_start(&query->error, conn->mysql,
+                                        query->query_str, strlen(query->query_str));
+        if (status) {
+            conn->state = CONN_STATE_QUERYING;
+        } else {
+            if (query->error) {
+                msg->err("[FD %i] MariaDB Query Error: %s", conn->fd, mysql_error(conn->mysql));
+                conn->state = CONN_STATE_ERR_QUERY;
+                mariadb_query_free(query);
+                return;
+            } else {
+                conn->state = CONN_STATE_QUERIED;
+                mariadb_process_result(conn);
+            }
+        }
+    } else {
+        msg->err("[FD %i] MariaDB Query Statement Missing", conn->fd);
+    }
+}
 
 mariadb_conn_t *mariadb_init(duda_request_t *dr)
 {
@@ -75,15 +102,27 @@ int mariadb_connect(mariadb_conn_t *conn, duda_request_t *dr)
             return MARIADB_ERR;
         }
         conn->fd = mysql_get_socket(conn->mysql);
-        event->add(conn->fd, dr, DUDA_EVENT_RW, DUDA_EVENT_LEVEL_TRIGGERED,
+        event->add(conn->fd, dr, DUDA_EVENT_READ, DUDA_EVENT_LEVEL_TRIGGERED,
                    mariadb_read, mariadb_write, mariadb_error, mariadb_close,
                    mariadb_timeout);
         if (status) {
             conn->state = CONN_STATE_CONNECTING;
         } else {
+            if (!conn->mysql_ret) {
+                msg->err("[FD %i] MariaDB Connect Error: %s", conn->fd, mysql_error(conn->mysql));
+                if (conn->connect_cb)
+                    conn->connect_cb(conn, MARIADB_ERR);
+                return MARIADB_ERR;
+            }
             conn->state = CONN_STATE_CONNECTED;
             if (conn->connect_cb)
                 conn->connect_cb(conn, MARIADB_OK);
+            event->mode(conn->fd, DUDA_EVENT_SLEEP, DUDA_EVENT_LEVEL_TRIGGERED);
+            if (mk_list_is_empty(conn->queries) == 0)
+                event->mode(conn->fd, DUDA_EVENT_SLEEP, DUDA_EVENT_LEVEL_TRIGGERED);
+            else
+                /*we got pending queries to process.*/
+                mariadb_process_query(conn);
         }
 
         struct mk_list *conn_list = pthread_getspecific(mariadb_conn_list);
@@ -129,7 +168,7 @@ int mariadb_read(int fd, void *data)
     }
 
     if (conn == NULL) {
-        msg->err("[fd %i] error: mariadb connection not found\n", fd);
+        msg->err("[fd %i] Error: MariaDB Connection Not Found\n", fd);
         return DUDA_EVENT_CLOSE;
     }
 
@@ -140,7 +179,7 @@ int mariadb_read(int fd, void *data)
                                          MYSQL_WAIT_READ);
         if (!status) {
             if (!conn->mysql_ret) {
-                msg->err("MariaDB Connect Error: %s", mysql_error(conn->mysql));
+                msg->err("[fd %i] MariaDB Connect Error: %s", fd, mysql_error(conn->mysql));
                 if (conn->connect_cb)
                     conn->connect_cb(conn, MARIADB_ERR);
                 return DUDA_EVENT_CLOSE;
@@ -148,7 +187,17 @@ int mariadb_read(int fd, void *data)
             conn->state = CONN_STATE_CONNECTED;
             if (conn->connect_cb)
                 conn->connect_cb(conn, MARIADB_OK);
+            if (mk_list_is_empty(conn->queries) == 0)
+                event->mode(conn->fd, DUDA_EVENT_SLEEP, DUDA_EVENT_LEVEL_TRIGGERED);
+            else
+                mariadb_process_query(conn);
         }
+        break;
+    case CONN_STATE_QUERYING:
+        break;
+    case CONN_STATE_ROW_STREAMING:
+        break;
+    case CONN_STATE_RESULT_FREEING:
         break;
     }
     return DUDA_EVENT_OWNED;
@@ -173,7 +222,7 @@ int mariadb_write(int fd, void *data)
     }
 
     if (conn == NULL) {
-        msg->err("[fd %i] error: mariadb connection not found\n", fd);
+        msg->err("[fd %i] Error: MariaDB Connection Not Found\n", fd);
         return DUDA_EVENT_CLOSE;
     }
     return DUDA_EVENT_OWNED;
