@@ -22,13 +22,11 @@
 #ifndef MARIADB_QUERY_H
 #define MARIADB_QUERY_H
 
-#include <mysql/mysql.h>
-
 typedef enum {
     QUERY_ABORT_NONE, QUERY_ABORT_QUERY, QUERY_ABORT_RESULT
 } mariadb_query_abort_t;
 
-typedef void (mariadb_query_cb)(void *privdata, unsigned long n_fields,
+typedef void (mariadb_query_row_cb)(void *privdata, unsigned long n_fields,
               char **fields, char **values);
 
 typedef struct mariadb_query {
@@ -39,11 +37,12 @@ typedef struct mariadb_query {
     mariadb_query_abort_t abort;
 
     void *privdata;
-    mariadb_query_cb *callback;
+    mariadb_query_row_cb *row_callback;
 
     struct mk_list _head;
 } mariadb_query_t;
 
 int mariadb_query_abort(mariadb_query_t *query);
+int mariadb_query_free(mariadb_query_t *query);
 
 #endif

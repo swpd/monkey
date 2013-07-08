@@ -22,11 +22,8 @@
 #ifndef MARIADB_CONNECTION_H
 #define MARIADB_CONNECTION_H
 
-#include <mysql/mysql.h>
+#include "common.h"
 #include "query.h"
-
-#define MARIADB_OK 0
-#define MARIADB_ERR -1
 
 typedef enum {
     CONN_STATE_NULL, CONN_STATE_CLOSE, CONN_STATE_CLOSED,

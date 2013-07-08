@@ -24,8 +24,6 @@
 
 #include "connection.h"
 
-#define FREE(p) if (p) { monkey->mem_free(p); p = NULL; }
-
 pthread_key_t mariadb_conn_list;
 
 typedef struct duda_api_mariadb {
@@ -55,6 +53,9 @@ static inline int mariadb_init_keys()
 mariadb_conn_t *mariadb_init();
 int mariadb_connect(mariadb_conn_t *conn, duda_request_t *dr);
 int mariadb_disconnect(mariadb_conn_t *conn);
+
+#define mariadb_real_escape_string(conn, to, from, length) \
+    mysql_real_escape_string(conn->mysql, to, from ,lengeth)
 
 int mariadb_read(int fd, void *data);
 int mariadb_write(int fd, void *data);
