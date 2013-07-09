@@ -90,7 +90,7 @@ static inline int mariadb_set_disconnect_cb(mariadb_conn_t *conn, mariadb_discon
     return MARIADB_ERR;
 }
 
-int mariadb_conn_add_query(mariadb_conn_t *conn, char *query_str,
-                           mariadb_query_cb *cb, void *privdata);
+int mariadb_conn_add_query(mariadb_conn_t *conn, const char *query_str,
+                           mariadb_query_row_cb *cb, void *privdata);
 
 #endif

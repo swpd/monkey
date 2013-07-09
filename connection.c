@@ -21,8 +21,18 @@
 
 #include "connection.h"
 
-int mariadb_conn_add_query(mariadb_conn_t *conn, char *query_str,
-                           mariadb_query_cb *cb, void *privdata)
+int mariadb_conn_add_query(mariadb_conn_t *conn, const char *query_str,
+                           mariadb_query_row_cb *row_cb, void *privdata)
 {
+    mariadb_query_t *query = monkey->mem_alloc(sizeof(mariadb_query_t));
+    if (!query)
+        return MARIADB_ERR;
+    query->query_str       = monkey->str_dup(query_str);
+    query->row_callback    = row_cb;
+    query->privdata        = privdata;
+    query->error           = 0;
+    query->result          = NULL;
+    query->abort           = QUERY_ABORT_NONE;
+    mk_list_add(&query->_head, &conn->queries);
     return MARIADB_OK;
 }
