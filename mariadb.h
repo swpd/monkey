@@ -27,12 +27,15 @@
 pthread_key_t mariadb_conn_list;
 
 typedef struct duda_api_mariadb {
-    int (*connect)(mariadb_conn_t *, duda_request_t *);
+    mariadb_conn_t *(*init)(duda_request_t *, char *, char *, char *, char *,
+                            unsigned int, char *, unsigned long);
+    int (*connect)(mariadb_conn_t *);
     int (*disconnect)(mariadb_conn_t *);
     int (*set_connect_cb)(mariadb_conn_t *, mariadb_connect_cb *);
     int (*set_disconnect_cb)(mariadb_conn_t *, mariadb_disconnect_cb *);
     unsigned long (*escape)(mariadb_conn_t *, char *, const char *, unsigned long);
-    int (*query)(mariadb_conn_t *, char *, mariadb_query_cb *, void *);
+    int (*query)(mariadb_conn_t *, const char *, mariadb_query_row_cb *, void *,
+                 mariadb_query_end_cb *, void *);
     int (*abort)(mariadb_query_t *);
 } mariadb_object_t;
 
@@ -50,9 +53,14 @@ static inline int mariadb_init_keys()
     return MARIADB_OK;
 }
 
-mariadb_conn_t *mariadb_init();
-int mariadb_connect(mariadb_conn_t *conn, duda_request_t *dr);
+mariadb_conn_t *mariadb_init(duda_request_t * dr, char *user, char *password,
+                             char *ip, char *db, unsigned int port,
+                             char *unix_socket, unsigned long client_flag);
+int mariadb_connect(mariadb_conn_t *conn);
 int mariadb_disconnect(mariadb_conn_t *conn);
+int mariadb_query(mariadb_conn_t *conn, const char * query_str,
+                  mariadb_query_row_cb *row_cb, void *row_cb_privdata,
+                  mariadb_query_end_cb *end_cb, void *end_cb_privdata);
 
 #define mariadb_real_escape_string(conn, to, from, length) \
     mysql_real_escape_string(conn->mysql, to, from ,lengeth)
