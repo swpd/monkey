@@ -34,6 +34,8 @@ typedef struct mariadb_query {
     char *query_str;
     MYSQL_RES *result;
     MYSQL_ROW row;
+    unsigned int n_fields;
+    char **fields;
     int error;
     mariadb_query_abort_t abort;
 

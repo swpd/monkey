@@ -29,6 +29,8 @@ int mariadb_conn_add_query(mariadb_conn_t *conn, const char *query_str,
     if (!query)
         return MARIADB_ERR;
     query->query_str       = monkey->str_dup(query_str);
+    query->n_fields        = 0;
+    query->fields          = NULL;
     query->row_callback    = row_cb;
     query->row_cb_privdata = row_cb_privdata;
     query->end_callback    = end_cb;
