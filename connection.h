@@ -40,8 +40,8 @@ typedef struct mariadb_conn_config {
     char *password;
     char *ip;
     char *db;
-    char *unix_socket;
     unsigned int port;
+    char *unix_socket;
     unsigned long client_flag;
 
     //ssl config
@@ -93,4 +93,5 @@ static inline int mariadb_set_disconnect_cb(mariadb_conn_t *conn, mariadb_discon
 int mariadb_conn_add_query(mariadb_conn_t *conn, const char *query_str,
                            mariadb_query_row_cb *cb, void *privdata);
 
+void mariadb_conn_free(mariadb_conn_t *conn);
 #endif
