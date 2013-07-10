@@ -30,12 +30,13 @@ mariadb_object_t *get_mariadb_api()
     mariadb = monkey->mem_alloc(sizeof(mariadb_object_t));
 
     /* Map API calls */
+    mariadb->init              = mariadb_init;
     mariadb->connect           = mariadb_connect;
     mariadb->disconnect        = mariadb_disconnect;
-    mariadb->set_connect_cb    = mariadb_set_disconnect_cb;
+    mariadb->set_connect_cb    = mariadb_set_connect_cb;
     mariadb->set_disconnect_cb = mariadb_set_disconnect_cb;
     mariadb->escape            = mariadb_real_escape_string;
-    mariadb->query             = mariadb_conn_add_query;
+    mariadb->query             = mariadb_query;
     mariadb->abort             = mariadb_query_abort;
 
     return mariadb;
