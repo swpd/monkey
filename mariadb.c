@@ -52,7 +52,7 @@ static void __mariadb_handle_row(mariadb_conn_t *conn)
         /* all rows have been fetched */
         if (!query->row) {
             if (query->end_callback) {
-                query->end_callback(query->end_cb_privdata, conn);
+                query->end_callback(query->end_cb_privdata);
             }
             __mariadb_handle_result_free(conn);
             break;
@@ -130,6 +130,9 @@ static void __mariadb_handle_query(mariadb_conn_t *conn)
     conn->state         = CONN_STATE_CONNECTED;
     /* all queries have been handled */
     event->mode(conn->fd, DUDA_EVENT_SLEEP, DUDA_EVENT_LEVEL_TRIGGERED);
+    if (conn->disconnect_on_empty) {
+        mariadb_disconnect(conn);
+    }
     return;
 }
 
@@ -142,25 +145,26 @@ mariadb_conn_t *mariadb_init(duda_request_t *dr, char *user, char *password,
         return NULL;
     }
 
-    conn->dr                 = dr;
-    conn->config.user        = monkey->str_dup(user);
-    conn->config.password    = monkey->str_dup(password);
-    conn->config.ip          = monkey->str_dup(ip);
-    conn->config.db          = monkey->str_dup(db);
-    conn->config.port        = port;
-    conn->config.unix_socket = monkey->str_dup(unix_socket);
-    conn->config.client_flag = client_flag;
-    conn->config.ssl_key     = NULL;
-    conn->config.ssl_cert    = NULL;
-    conn->config.ssl_ca      = NULL;
-    conn->config.ssl_capath  = NULL;
-    conn->config.ssl_cipher  = NULL;
-    conn->fd                 = 0;
-    conn->state              = CONN_STATE_CLOSED;
-    conn->connect_ct         = NULL;
-    conn->disconnect_cb      = NULL;
-    conn->current_query      = NULL;
-    conn->mysql              = mysql_init(NULL);
+    conn->dr                  = dr;
+    conn->config.user         = monkey->str_dup(user);
+    conn->config.password     = monkey->str_dup(password);
+    conn->config.ip           = monkey->str_dup(ip);
+    conn->config.db           = monkey->str_dup(db);
+    conn->config.port         = port;
+    conn->config.unix_socket  = monkey->str_dup(unix_socket);
+    conn->config.client_flag  = client_flag;
+    conn->config.ssl_key      = NULL;
+    conn->config.ssl_cert     = NULL;
+    conn->config.ssl_ca       = NULL;
+    conn->config.ssl_capath   = NULL;
+    conn->config.ssl_cipher   = NULL;
+    conn->fd                  = 0;
+    conn->state               = CONN_STATE_CLOSED;
+    conn->connect_ct          = NULL;
+    conn->disconnect_cb       = NULL;
+    conn->current_query       = NULL;
+    conn->disconnect_on_empty = 0;
+    conn->mysql               = mysql_init(NULL);
 
     mysql_options(conn->mysql, MYSQL_OPT_NONBLOCK, 0);
     mk_list_init(&conn->queries);
@@ -237,11 +241,20 @@ int mariadb_connect(mariadb_conn_t *conn)
     return MARIADB_OK;
 }
 
-int mariadb_disconnect(mariadb_conn_t *conn)
+void mariadb_disconnect(mariadb_conn_t *conn)
 {
+    if (conn->state != CONN_STATE_CONNECTED) {
+        conn->disconnect_on_empty = 1;
+        return;
+    }
+    event->delete(conn->fd);
     mysql_close(conn->mysql);
+    conn->state = CONN_STATE_CLOSED;
+    if (conn->disconnect_cb) {
+        conn->disconnect_cb(conn);
+    }
     mariadb_conn_free(conn);
-    return MARIADB_OK;
+    return;
 }
 
 int mariadb_read(int fd, void *data)
@@ -312,8 +325,7 @@ int mariadb_read(int fd, void *data)
                 conn->state = CONN_STATE_ROW_FETCHED;
                 if (!conn->current_query->row) {
                     if (conn->current_query->end_callback) {
-                        conn->current_query->end_callback(query->end_cb_privdata,
-                                                          conn);
+                        conn->current_query->end_callback(query->end_cb_privdata);
                     }
                     __mariadb_handle_result_free(conn);
                     if (conn->state == CONN_STATE_RESULT_FREED) {
