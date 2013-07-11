@@ -29,7 +29,7 @@ int mariadb_query_abort(mariadb_query_t *query)
 
 void mariadb_query_free(mariadb_query_t *query)
 {
-    mk_list_del(query->_head);
+    mk_list_del(&query->_head);
     unsigned int i;
     for (i = 0; i < query->n_fields; ++i) {
         FREE(query->fields[i]);
