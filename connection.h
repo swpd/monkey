@@ -54,7 +54,7 @@ typedef struct mariadb_conn_config {
 
 struct mariadb_conn; /* forward declaration */
 typedef void (mariadb_connect_cb)(struct mariadb_conn *conn, int status);
-typedef void (mariadb_disconnect_cb)(struct mariadb_conn *conn, int status);
+typedef void (mariadb_disconnect_cb)(struct mariadb_conn *conn);
 
 typedef struct mariadb_conn {
     struct duda_request *dr;
@@ -67,6 +67,7 @@ typedef struct mariadb_conn {
     mariadb_disconnect_cb *disconnect_cb;
 
     mariadb_query_t *current_query;
+    int disconnect_on_empty;
     struct mk_list queries;
     struct mk_list _head;
 } mariadb_conn_t;
@@ -92,7 +93,8 @@ static inline int mariadb_set_disconnect_cb(mariadb_conn_t *conn, mariadb_discon
 }
 
 int mariadb_conn_add_query(mariadb_conn_t *conn, const char *query_str,
-                           mariadb_query_row_cb *cb, void *privdata);
+                           mariadb_query_row_cb *row_cb, void *row_cb_privdata,
+                           mariadb_query_end_cb *end_cb, void *end_cb_privdata);
 
 void mariadb_conn_free(mariadb_conn_t *conn);
 #endif
