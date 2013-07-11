@@ -42,7 +42,7 @@ mariadb_object_t *get_mariadb_api()
     return mariadb;
 }
 
-duda_package_t *duda_package_main(mariadb_object_t *api)
+duda_package_t *duda_package_main(struct duda_api_objects *api)
 {
     duda_package_t *dpkg;
 
@@ -50,8 +50,7 @@ duda_package_t *duda_package_main(mariadb_object_t *api)
 
     mariadb_init_keys();
 
-    dpkg = monkey->mem_alloc(sizeof(duda_package_t));
-
+    dpkg          = monkey->mem_alloc(sizeof(duda_package_t));
     dpkg->name    = "MariaDB";
     dpkg->version = "0.1";
     dpkg->api     = get_mariadb_api();
