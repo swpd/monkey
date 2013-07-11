@@ -48,6 +48,6 @@ typedef struct mariadb_query {
 } mariadb_query_t;
 
 int mariadb_query_abort(mariadb_query_t *query);
-int mariadb_query_free(mariadb_query_t *query);
+void mariadb_query_free(mariadb_query_t *query);
 
 #endif
