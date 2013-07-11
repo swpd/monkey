@@ -30,7 +30,7 @@ typedef struct duda_api_mariadb {
     mariadb_conn_t *(*init)(duda_request_t *, char *, char *, char *, char *,
                             unsigned int, char *, unsigned long);
     int (*connect)(mariadb_conn_t *);
-    int (*disconnect)(mariadb_conn_t *);
+    void (*disconnect)(mariadb_conn_t *);
     int (*set_connect_cb)(mariadb_conn_t *, mariadb_connect_cb *);
     int (*set_disconnect_cb)(mariadb_conn_t *, mariadb_disconnect_cb *);
     unsigned long (*escape)(mariadb_conn_t *, char *, const char *, unsigned long);

@@ -59,7 +59,7 @@ static void __mariadb_handle_row(mariadb_conn_t *conn)
         }
         if (query->row_callback) {
             query->row_callback(query->row_cb_privdata, query->n_fields,
-                                query->fields, row);
+                                query->fields, query->row);
         }
     }
     return;
@@ -67,7 +67,6 @@ static void __mariadb_handle_row(mariadb_conn_t *conn)
 
 static void __mariadb_handle_result(mariadb_conn_t *conn)
 {
-    int status;
     mariadb_query_t *query = conn->current_query;
 
     query->result = mysql_use_result(conn->mysql);
@@ -96,7 +95,7 @@ static void __mariadb_handle_query(mariadb_conn_t *conn)
 {
     int status;
 
-    while (mk_list_is_empty(conn) != 0) {
+    while (mk_list_is_empty(&conn->queries) != 0) {
         mariadb_query_t *query = mk_list_entry_first(&conn->queries,
                                                      mariadb_query_t, _head);
         conn->current_query = query;
@@ -138,7 +137,7 @@ static void __mariadb_handle_query(mariadb_conn_t *conn)
 
 mariadb_conn_t *mariadb_init(duda_request_t *dr, char *user, char *password,
                              char *ip, char *db, unsigned int port,
-                             char *unix_socket, unsigned long client_flag);
+                             char *unix_socket, unsigned long client_flag)
 {
     mariadb_conn_t *conn = monkey->mem_alloc(sizeof(mariadb_conn_t));
     if (!conn) {
@@ -231,7 +230,7 @@ int mariadb_connect(mariadb_conn_t *conn)
         }
 
         struct mk_list *conn_list = pthread_getspecific(mariadb_conn_list);
-        mk_list_add(&conn->_head, mariadb_conn_list);
+        mk_list_add(&conn->_head, conn_list);
         /* handle pending queries on connected */
         if (conn->state == CONN_STATE_CONNECTED) {
             __mariadb_handle_query(conn);
@@ -259,6 +258,7 @@ void mariadb_disconnect(mariadb_conn_t *conn)
 
 int mariadb_read(int fd, void *data)
 {
+    (void) data;
     msg->info("[FD %i] MariaDB Connection Handler / read\n", fd);
 
     struct mk_list *conn_list, *head;
@@ -343,7 +343,7 @@ int mariadb_read(int fd, void *data)
         }
         break;
     case CONN_STATE_RESULT_FREEING:
-        status = mysql_free_result_cont(conn->current_query, MYSQL_WAIT_READ);
+        status = mysql_free_result_cont(conn->current_query->result, MYSQL_WAIT_READ);
         if (!status) {
             conn->state = CONN_STATE_RESULT_FREED;
             mariadb_query_free(conn->current_query);
@@ -356,6 +356,7 @@ int mariadb_read(int fd, void *data)
 
 int mariadb_write(int fd, void *data)
 {
+    (void) data;
     msg->info("[FD %i] MariaDB Connection Hander / write\n", fd);
 
     struct mk_list *conn_list, *head;
@@ -380,18 +381,21 @@ int mariadb_write(int fd, void *data)
 
 int mariadb_error(int fd, void *data)
 {
+    (void) data;
     msg->info("[FD %i] MariaDB Connection Handler / error\n", fd);
     return DUDA_EVENT_OWNED;
 }
 
 int mariadb_close(int fd, void *data)
 {
+    (void) data;
     msg->info("[FD %i] MariaDB Connection Handler / close\n", fd);
     return DUDA_EVENT_CLOSE;
 }
 
 int mariadb_timeout(int fd, void *data)
 {
+    (void) data;
     msg->info("[FD %i] MariaDB Connection Handler / timeout\n", fd);
     return DUDA_EVENT_OWNED;
 }
