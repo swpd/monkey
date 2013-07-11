@@ -42,7 +42,7 @@ typedef struct mariadb_query {
     mariadb_query_row_cb *row_callback;
     void *row_cb_privdata;
     mariadb_query_end_cb *end_callback;
-    vodi *end_cb_privdata;
+    void *end_cb_privdata;
 
     struct mk_list _head;
 } mariadb_query_t;
