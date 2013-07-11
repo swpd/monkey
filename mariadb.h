@@ -46,10 +46,6 @@ static inline int mariadb_init_keys()
     if (pthread_key_create(&mariadb_conn_list, NULL) != 0)
         return MARIADB_ERR;
 
-    struct mk_list *conn_list = monkey->mem_alloc(sizeof(struct mk_list));
-    mk_list_init(conn_list);
-    pthread_setspecific(mariadb_conn_list, (void *) conn_list);
-
     return MARIADB_OK;
 }
 

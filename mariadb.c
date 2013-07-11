@@ -230,6 +230,11 @@ int mariadb_connect(mariadb_conn_t *conn)
         }
 
         struct mk_list *conn_list = pthread_getspecific(mariadb_conn_list);
+        if (conn_list == NULL) {
+            conn_list = monkey->mem_alloc(sizeof(struct mk_list));
+            mk_list_init(conn_list);
+            pthread_setspecific(mariadb_conn_list, (void *) conn_list);
+        }
         mk_list_add(&conn->_head, conn_list);
         /* handle pending queries on connected */
         if (conn->state == CONN_STATE_CONNECTED) {
