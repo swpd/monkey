@@ -159,7 +159,7 @@ mariadb_conn_t *mariadb_init(duda_request_t *dr, char *user, char *password,
     conn->config.ssl_cipher   = NULL;
     conn->fd                  = 0;
     conn->state               = CONN_STATE_CLOSED;
-    conn->connect_ct          = NULL;
+    conn->connect_cb          = NULL;
     conn->disconnect_cb       = NULL;
     conn->current_query       = NULL;
     conn->disconnect_on_empty = 0;
@@ -306,7 +306,7 @@ int mariadb_read(int fd, void *data)
                 msg->err("[FD %i] MariaDB Query Error: %s", conn->fd,
                          mysql_error(conn->mysql));
                 /* may add a query on error callback to be called here */
-                mariadb_query_free(query);
+                mariadb_query_free(conn->current_query);
             } else {
                 conn->state = CONN_STATE_QUERIED;
                 __mariadb_handle_result(conn);
@@ -325,7 +325,7 @@ int mariadb_read(int fd, void *data)
                 conn->state = CONN_STATE_ROW_FETCHED;
                 if (!conn->current_query->row) {
                     if (conn->current_query->end_callback) {
-                        conn->current_query->end_callback(query->end_cb_privdata);
+                        conn->current_query->end_callback(conn->current_query->end_cb_privdata);
                     }
                     __mariadb_handle_result_free(conn);
                     if (conn->state == CONN_STATE_RESULT_FREED) {
@@ -337,7 +337,7 @@ int mariadb_read(int fd, void *data)
                     conn->current_query->row_callback(conn->current_query->row_cb_privdata,
                                                       conn->current_query->n_fields,
                                                       conn->current_query->fields,
-                                                      row);
+                                                      conn->current_query->row);
                 }
             }
         }

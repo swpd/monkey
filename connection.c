@@ -54,7 +54,7 @@ void mariadb_conn_free(mariadb_conn_t *conn)
     FREE(conn->config.ssl_ca);
     FREE(conn->config.ssl_capath);
     FREE(conn->config.ssl_cipher);
-    while (mk_list_is_empty(conn->queries) != 0) {
+    while (mk_list_is_empty(&conn->queries) != 0) {
         mariadb_query_t *query = mk_list_entry_first(&conn->queries,
                                                      mariadb_query_t, _head);
         mariadb_query_free(query);
