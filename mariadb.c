@@ -359,7 +359,7 @@ int mariadb_read(int fd, void *data)
             __mariadb_handle_query(conn);
         }
         break;
-    case default:
+    default:
         break;
     }
     return DUDA_EVENT_OWNED;
