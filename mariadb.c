@@ -21,6 +21,19 @@
 
 #include "mariadb.h"
 
+static void __mariadb_handle_disconnect(mariadb_conn_t *conn)
+{
+    event->delete(conn->fd);
+    mk_list_del(&conn->_head);
+    mysql_close(conn->mysql);
+    conn->state = CONN_STATE_CLOSED;
+    if (conn->disconnect_cb) {
+        conn->disconnect_cb(conn);
+    }
+    mariadb_conn_free(conn);
+    return;
+}
+
 static void __mariadb_handle_result_free(mariadb_conn_t *conn)
 {
     int status;
@@ -131,7 +144,7 @@ static void __mariadb_handle_query(mariadb_conn_t *conn)
     /* all queries have been handled */
     event->mode(conn->fd, DUDA_EVENT_SLEEP, DUDA_EVENT_LEVEL_TRIGGERED);
     if (conn->disconnect_on_empty) {
-        mariadb_disconnect(conn);
+        __mariadb_handle_disconnect(conn);
     }
     return;
 }
@@ -259,14 +272,7 @@ void mariadb_disconnect(mariadb_conn_t *conn, mariadb_disconnect_cb *cb)
         conn->disconnect_on_empty = 1;
         return;
     }
-    event->delete(conn->fd);
-    mk_list_del(&conn->_head);
-    mysql_close(conn->mysql);
-    conn->state = CONN_STATE_CLOSED;
-    if (conn->disconnect_cb) {
-        conn->disconnect_cb(conn);
-    }
-    mariadb_conn_free(conn);
+    __mariadb_handle_disconnect(conn);
     return;
 }
 
