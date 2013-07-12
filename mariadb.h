@@ -31,8 +31,6 @@ typedef struct duda_api_mariadb {
                             unsigned int, char *, unsigned long);
     int (*connect)(mariadb_conn_t *);
     void (*disconnect)(mariadb_conn_t *);
-    int (*set_connect_cb)(mariadb_conn_t *, mariadb_connect_cb *);
-    int (*set_disconnect_cb)(mariadb_conn_t *, mariadb_disconnect_cb *);
     unsigned long (*escape)(mariadb_conn_t *, char *, const char *, unsigned long);
     int (*query)(mariadb_conn_t *, const char *, mariadb_query_row_cb *, void *,
                  mariadb_query_end_cb *, void *);
@@ -52,8 +50,8 @@ static inline int mariadb_init_keys()
 mariadb_conn_t *mariadb_init(duda_request_t * dr, char *user, char *password,
                              char *ip, char *db, unsigned int port,
                              char *unix_socket, unsigned long client_flag);
-int mariadb_connect(mariadb_conn_t *conn);
-void mariadb_disconnect(mariadb_conn_t *conn);
+int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb);
+void mariadb_disconnect(mariadb_conn_t *conn, mariadb_disconnect_cb *cb);
 int mariadb_query(mariadb_conn_t *conn, const char * query_str,
                   mariadb_query_row_cb *row_cb, void *row_cb_privdata,
                   mariadb_query_end_cb *end_cb, void *end_cb_privdata);

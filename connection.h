@@ -72,26 +72,6 @@ typedef struct mariadb_conn {
     struct mk_list _head;
 } mariadb_conn_t;
 
-static inline int mariadb_set_connect_cb(mariadb_conn_t *conn, mariadb_connect_cb *cb)
-{
-    if (!conn->connect_cb)
-    {
-        conn->connect_cb = cb;
-        return MARIADB_OK;
-    }
-    return MARIADB_ERR;
-}
-
-static inline int mariadb_set_disconnect_cb(mariadb_conn_t *conn, mariadb_disconnect_cb *cb)
-{
-    if (!conn->disconnect_cb)
-    {
-        conn->disconnect_cb = cb;
-        return MARIADB_OK;
-    }
-    return MARIADB_ERR;
-}
-
 int mariadb_conn_add_query(mariadb_conn_t *conn, const char *query_str,
                            mariadb_query_row_cb *row_cb, void *row_cb_privdata,
                            mariadb_query_end_cb *end_cb, void *end_cb_privdata);

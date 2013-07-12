@@ -189,9 +189,12 @@ int mariadb_query(mariadb_conn_t *conn, const char * query_str,
     return MARIADB_OK;
 }
 
-int mariadb_connect(mariadb_conn_t *conn)
+int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb)
 {
     int status;
+    if(!conn->connect_cb) {
+        conn->connect_cb = cb;
+    }
 
     /* whether the connection has already been established */
     if (conn->state == CONN_STATE_CLOSED) { 
@@ -246,8 +249,12 @@ int mariadb_connect(mariadb_conn_t *conn)
     return MARIADB_OK;
 }
 
-void mariadb_disconnect(mariadb_conn_t *conn)
+void mariadb_disconnect(mariadb_conn_t *conn, mariadb_disconnect_cb *cb)
 {
+    if (!conn->disconnect_cb) {
+        conn->disconnect_cb = cb;
+    }
+
     if (conn->state != CONN_STATE_CONNECTED) {
         conn->disconnect_on_empty = 1;
         return;
