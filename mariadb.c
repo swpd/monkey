@@ -52,14 +52,14 @@ static void __mariadb_handle_row(mariadb_conn_t *conn)
         /* all rows have been fetched */
         if (!query->row) {
             if (query->end_callback) {
-                query->end_callback(query->end_cb_privdata);
+                query->end_callback(query->end_cb_privdata, conn->dr);
             }
             __mariadb_handle_result_free(conn);
             break;
         }
         if (query->row_callback) {
             query->row_callback(query->row_cb_privdata, query->n_fields,
-                                query->fields, query->row);
+                                query->fields, query->row, conn->dr);
         }
     }
     return;
@@ -101,6 +101,7 @@ static void __mariadb_handle_query(mariadb_conn_t *conn)
         conn->current_query = query;
         if (query->abort) {
             mariadb_query_free(query);
+            continue;
         }
 
         if (query->query_str) {
@@ -252,6 +253,7 @@ void mariadb_disconnect(mariadb_conn_t *conn)
         return;
     }
     event->delete(conn->fd);
+    mk_list_del(&conn->_head);
     mysql_close(conn->mysql);
     conn->state = CONN_STATE_CLOSED;
     if (conn->disconnect_cb) {
@@ -330,7 +332,8 @@ int mariadb_read(int fd, void *data)
                 conn->state = CONN_STATE_ROW_FETCHED;
                 if (!conn->current_query->row) {
                     if (conn->current_query->end_callback) {
-                        conn->current_query->end_callback(conn->current_query->end_cb_privdata);
+                        conn->current_query->end_callback(conn->current_query->end_cb_privdata,
+                                                          conn->dr);
                     }
                     __mariadb_handle_result_free(conn);
                     if (conn->state == CONN_STATE_RESULT_FREED) {
@@ -342,7 +345,8 @@ int mariadb_read(int fd, void *data)
                     conn->current_query->row_callback(conn->current_query->row_cb_privdata,
                                                       conn->current_query->n_fields,
                                                       conn->current_query->fields,
-                                                      conn->current_query->row);
+                                                      conn->current_query->row,
+                                                      conn->dr);
                 }
             }
         }
