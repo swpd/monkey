@@ -27,8 +27,8 @@ typedef enum {
 } mariadb_query_abort_t;
 
 typedef void (mariadb_query_row_cb)(void *privdata, unsigned long n_fields,
-              char **fields, char **values);
-typedef void (mariadb_query_end_cb)(void *privdata);
+              char **fields, char **values, duda_request_t *dr);
+typedef void (mariadb_query_end_cb)(void *privdata, duda_request_t *dr);
 
 typedef struct mariadb_query {
     char *query_str;
