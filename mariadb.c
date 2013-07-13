@@ -23,7 +23,6 @@
 
 static void __mariadb_handle_disconnect(mariadb_conn_t *conn)
 {
-    event->delete(conn->fd);
     mk_list_del(&conn->_head);
     mysql_close(conn->mysql);
     conn->state = CONN_STATE_CLOSED;
@@ -144,6 +143,7 @@ static void __mariadb_handle_query(mariadb_conn_t *conn)
     /* all queries have been handled */
     event->mode(conn->fd, DUDA_EVENT_SLEEP, DUDA_EVENT_LEVEL_TRIGGERED);
     if (conn->disconnect_on_empty) {
+        event->delete(conn->fd);
         __mariadb_handle_disconnect(conn);
     }
     return;
@@ -218,15 +218,15 @@ int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb)
                                           conn->config.unix_socket,
                                           conn->config.client_flag);
         if (!conn->mysql_ret && mysql_errno(conn->mysql) > 0) {
-            if (conn->connect_cb)
+            msg->err("MariaDB Connect Error: %s", conn->fd,
+                     mysql_error(conn->mysql));
+            if (conn->connect_cb) {
                 conn->connect_cb(conn, MARIADB_ERR);
+            }
             mariadb_conn_free(conn);
             return MARIADB_ERR;
         }
         conn->fd = mysql_get_socket(conn->mysql);
-        event->add(conn->fd, DUDA_EVENT_READ, DUDA_EVENT_LEVEL_TRIGGERED,
-                   mariadb_read, mariadb_write, mariadb_error, mariadb_close,
-                   mariadb_timeout, NULL);
 
         if (status) {
             conn->state = CONN_STATE_CONNECTING;
@@ -245,6 +245,10 @@ int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb)
                 conn->connect_cb(conn, MARIADB_OK);
             }
         }
+
+        event->add(conn->fd, DUDA_EVENT_READ, DUDA_EVENT_LEVEL_TRIGGERED,
+                   mariadb_read, mariadb_write, mariadb_error, mariadb_close,
+                   mariadb_timeout, NULL);
 
         struct mk_list *conn_list = pthread_getspecific(mariadb_conn_list);
         if (conn_list == NULL) {
@@ -272,6 +276,7 @@ void mariadb_disconnect(mariadb_conn_t *conn, mariadb_disconnect_cb *cb)
         conn->disconnect_on_empty = 1;
         return;
     }
+    event->delete(conn->fd);
     __mariadb_handle_disconnect(conn);
     return;
 }
@@ -315,6 +320,8 @@ int mariadb_read(int fd, void *data)
                          mysql_error(conn->mysql));
                 /* may add a query on error callback to be called here */
                 mariadb_query_free(conn->current_query);
+                conn->state = CONN_STATE_CONNECTED;
+                __mariadb_handle_query(conn);
             } else {
                 conn->state = CONN_STATE_QUERIED;
                 __mariadb_handle_result(conn);
@@ -389,6 +396,14 @@ int mariadb_error(int fd, void *data)
         msg->err("[fd %i] Error: MariaDB Connection Not Found\n", fd);
         return DUDA_EVENT_CLOSE;
     }
+
+    if (conn->current_query) {
+        if (conn->current_query->result) {
+            mysql_free_result(conn->current_query->result);
+        }
+    }
+    __mariadb_handle_disconnect(conn);
+
     return DUDA_EVENT_OWNED;
 }
 
@@ -402,6 +417,7 @@ int mariadb_close(int fd, void *data)
         msg->err("[fd %i] Error: MariaDB Connection Not Found\n", fd);
         return DUDA_EVENT_CLOSE;
     }
+    __mariadb_handle_disconnect(conn);
     return DUDA_EVENT_CLOSE;
 }
 
