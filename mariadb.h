@@ -47,6 +47,21 @@ static inline int mariadb_init_keys()
     return MARIADB_OK;
 }
 
+static inline mariadb_conn_t *mariadb_get_conn(int fd)
+{
+    struct mk_list *conn_list, *head;
+    mariadb_conn_t *conn = NULL;
+
+    conn_list = pthread_getspecific(mariadb_conn_list);
+    mk_list_foreach(head, conn_list) {
+        conn = mk_list_entry(head, mariadb_conn_t, _head);
+        if (conn->fd == fd) {
+            break;
+        }
+    }
+    return conn;
+}
+
 mariadb_conn_t *mariadb_init(duda_request_t * dr, char *user, char *password,
                              char *ip, char *db, unsigned int port,
                              char *unix_socket, unsigned long client_flag);

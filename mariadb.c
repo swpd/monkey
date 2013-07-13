@@ -280,19 +280,7 @@ int mariadb_read(int fd, void *data)
 {
     (void) data;
     msg->info("[FD %i] MariaDB Connection Handler / read\n", fd);
-
-    struct mk_list *conn_list, *head;
-    mariadb_conn_t *conn_entry, *conn = NULL;
-
-    conn_list = pthread_getspecific(mariadb_conn_list);
-
-    mk_list_foreach(head, conn_list) {
-        conn_entry = mk_list_entry(head, mariadb_conn_t, _head);
-        if (conn_entry->fd == fd) {
-            conn = conn_entry;
-            break;
-        }
-    }
+    mariadb_conn_t *conn = mariadb_get_conn(fd);
 
     if (conn == NULL) {
         msg->err("[fd %i] Error: MariaDB Connection Not Found\n", fd);
@@ -383,19 +371,7 @@ int mariadb_write(int fd, void *data)
     (void) data;
     msg->info("[FD %i] MariaDB Connection Hander / write\n", fd);
 
-    struct mk_list *conn_list, *head;
-    mariadb_conn_t *conn_entry, *conn = NULL;
-
-    conn_list = pthread_getspecific(mariadb_conn_list);
-
-    mk_list_foreach(head, conn_list) {
-        conn_entry = mk_list_entry(head, mariadb_conn_t, _head);
-        if (conn_entry->fd == fd) {
-            conn = conn_entry;
-            break;
-        }
-    }
-
+    mariadb_conn_t *conn = mariadb_get_conn(fd);
     if (conn == NULL) {
         msg->err("[fd %i] Error: MariaDB Connection Not Found\n", fd);
         return DUDA_EVENT_CLOSE;
@@ -407,6 +383,12 @@ int mariadb_error(int fd, void *data)
 {
     (void) data;
     msg->info("[FD %i] MariaDB Connection Handler / error\n", fd);
+
+    mariadb_conn_t *conn = mariadb_get_conn(fd);
+    if (conn == NULL) {
+        msg->err("[fd %i] Error: MariaDB Connection Not Found\n", fd);
+        return DUDA_EVENT_CLOSE;
+    }
     return DUDA_EVENT_OWNED;
 }
 
