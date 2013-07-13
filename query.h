@@ -23,7 +23,7 @@
 #define MARIADB_QUERY_H
 
 typedef enum {
-    QUERY_ABORT_NONE, QUERY_ABORT_QUERY, QUERY_ABORT_RESULT
+    QUERY_ABORT_NO, QUERY_ABORT_YES
 } mariadb_query_abort_t;
 
 typedef void (mariadb_query_row_cb)(void *privdata, unsigned long n_fields,
@@ -47,7 +47,11 @@ typedef struct mariadb_query {
     struct mk_list _head;
 } mariadb_query_t;
 
-int mariadb_query_abort(mariadb_query_t *query);
+static inline void mariadb_query_abort(mariadb_query_t *query)
+{
+    query->abort = QUERY_ABORT_YES;
+}
+
 void mariadb_query_free(mariadb_query_t *query);
 
 #endif

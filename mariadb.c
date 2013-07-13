@@ -396,6 +396,12 @@ int mariadb_close(int fd, void *data)
 {
     (void) data;
     msg->info("[FD %i] MariaDB Connection Handler / close\n", fd);
+
+    mariadb_conn_t *conn = mariadb_get_conn(fd);
+    if (conn == NULL) {
+        msg->err("[fd %i] Error: MariaDB Connection Not Found\n", fd);
+        return DUDA_EVENT_CLOSE;
+    }
     return DUDA_EVENT_CLOSE;
 }
 

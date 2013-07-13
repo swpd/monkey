@@ -22,11 +22,6 @@
 #include "common.h"
 #include "query.h"
 
-int mariadb_query_abort(mariadb_query_t *query)
-{
-    return MARIADB_OK;
-}
-
 void mariadb_query_free(mariadb_query_t *query)
 {
     mk_list_del(&query->_head);

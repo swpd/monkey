@@ -37,7 +37,7 @@ int mariadb_conn_add_query(mariadb_conn_t *conn, const char *query_str,
     query->end_cb_privdata = end_cb_privdata;
     query->error           = 0;
     query->result          = NULL;
-    query->abort           = QUERY_ABORT_NONE;
+    query->abort           = QUERY_ABORT_NO;
     mk_list_add(&query->_head, &conn->queries);
     return MARIADB_OK;
 }
