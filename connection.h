@@ -75,8 +75,9 @@ typedef struct mariadb_conn {
 } mariadb_conn_t;
 
 int mariadb_conn_add_query(mariadb_conn_t *conn, const char *query_str,
+                           mariadb_query_result_cb *result_cb,
                            mariadb_query_row_cb *row_cb, void *row_cb_privdata,
-                           mariadb_query_end_cb *end_cb, void *end_cb_privdata);
+                           mariadb_query_end_cb *end_cb);
 
 void mariadb_conn_free(mariadb_conn_t *conn);
 #endif

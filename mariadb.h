@@ -34,8 +34,8 @@ typedef struct duda_api_mariadb {
     int (*connect)(mariadb_conn_t *, mariadb_connect_cb *);
     void (*disconnect)(mariadb_conn_t *, mariadb_disconnect_cb *);
     unsigned long (*escape)(mariadb_conn_t *, char *, const char *, unsigned long);
-    int (*query)(mariadb_conn_t *, const char *, mariadb_query_row_cb *, void *,
-                 mariadb_query_end_cb *, void *);
+    int (*query)(mariadb_conn_t *, const char *, mariadb_query_result_cb *,
+                 mariadb_query_row_cb *, void *, mariadb_query_end_cb *);
     void (*abort)(mariadb_query_t *);
 } mariadb_object_t;
 
@@ -72,8 +72,9 @@ void mariadb_ssl_set(mariadb_conn_t *conn, const char *key, const char *cert,
 int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb);
 void mariadb_disconnect(mariadb_conn_t *conn, mariadb_disconnect_cb *cb);
 int mariadb_query(mariadb_conn_t *conn, const char * query_str,
+                  mariadb_query_result_cb *result_cb,
                   mariadb_query_row_cb *row_cb, void *row_cb_privdata,
-                  mariadb_query_end_cb *end_cb, void *end_cb_privdata);
+                  mariadb_query_end_cb *end_cb);
 
 static inline unsigned long mariadb_real_escape_string(mariadb_conn_t *conn,
                                                        char *to, const char *from,

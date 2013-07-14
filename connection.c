@@ -22,8 +22,9 @@
 #include "connection.h"
 
 int mariadb_conn_add_query(mariadb_conn_t *conn, const char *query_str,
+                           mariadb_query_result_cb *result_cb,
                            mariadb_query_row_cb *row_cb, void *row_cb_privdata,
-                           mariadb_query_end_cb *end_cb, void *end_cb_privdata)
+                           mariadb_query_end_cb *end_cb)
 {
     mariadb_query_t *query = monkey->mem_alloc(sizeof(mariadb_query_t));
     if (!query)
@@ -31,10 +32,10 @@ int mariadb_conn_add_query(mariadb_conn_t *conn, const char *query_str,
     query->query_str       = monkey->str_dup(query_str);
     query->n_fields        = 0;
     query->fields          = NULL;
+    query->result_callback = result_cb;
     query->row_callback    = row_cb;
-    query->row_cb_privdata = row_cb_privdata;
     query->end_callback    = end_cb;
-    query->end_cb_privdata = end_cb_privdata;
+    query->row_cb_privdata = row_cb_privdata;
     query->error           = 0;
     query->result          = NULL;
     query->abort           = QUERY_ABORT_NO;

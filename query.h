@@ -26,9 +26,11 @@ typedef enum {
     QUERY_ABORT_NO, QUERY_ABORT_YES
 } mariadb_query_abort_t;
 
+struct mariadb_query;
+typedef void (mariadb_query_result_cb)(struct mariadb_query *query, duda_request_t *dr);
 typedef void (mariadb_query_row_cb)(void *privdata, unsigned long n_fields,
               char **fields, char **values, duda_request_t *dr);
-typedef void (mariadb_query_end_cb)(void *privdata, duda_request_t *dr);
+typedef void (mariadb_query_end_cb)(struct mariadb_query *query, duda_request_t *dr);
 
 typedef struct mariadb_query {
     char *query_str;
@@ -39,10 +41,10 @@ typedef struct mariadb_query {
     int error;
     mariadb_query_abort_t abort;
 
+    mariadb_query_result_cb *result_callback;
     mariadb_query_row_cb *row_callback;
-    void *row_cb_privdata;
     mariadb_query_end_cb *end_callback;
-    void *end_cb_privdata;
+    void *row_cb_privdata;
 
     struct mk_list _head;
 } mariadb_query_t;

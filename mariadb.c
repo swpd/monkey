@@ -64,7 +64,7 @@ static void __mariadb_handle_row(mariadb_conn_t *conn)
         /* all rows have been fetched */
         if (!query->row) {
             if (query->end_callback) {
-                query->end_callback(query->end_cb_privdata, conn->dr);
+                query->end_callback(query, conn->dr);
             }
             __mariadb_handle_result_free(conn);
             break;
@@ -82,6 +82,9 @@ static void __mariadb_handle_result(mariadb_conn_t *conn)
     mariadb_query_t *query = conn->current_query;
 
     query->result = mysql_use_result(conn->mysql);
+    if (query->result_callback) {
+        query->result_callback(query, conn->dr);
+    }
     if (query->abort) {
         if (query->result) {
             __mariadb_handle_result_free(conn);
@@ -204,11 +207,12 @@ void mariadb_ssl_set(mariadb_conn_t *conn, const char *key, const char *cert,
 }
 
 int mariadb_query(mariadb_conn_t *conn, const char * query_str,
+                  mariadb_query_result_cb *result_cb,
                   mariadb_query_row_cb *row_cb, void *row_cb_privdata,
-                  mariadb_query_end_cb *end_cb, void *end_cb_privdata)
+                  mariadb_query_end_cb *end_cb)
 {
-    int ret = mariadb_conn_add_query(conn, query_str, row_cb, row_cb_privdata,
-                                     end_cb, end_cb_privdata);
+    int ret = mariadb_conn_add_query(conn, query_str, result_cb, row_cb,
+                                     row_cb_privdata, end_cb);
     if (ret != MARIADB_OK) {
         msg->err("[FD %i] MariaDB Add Query Error", conn->fd);
         return MARIADB_ERR;
@@ -357,7 +361,7 @@ int mariadb_read(int fd, void *data)
                 conn->state = CONN_STATE_ROW_FETCHED;
                 if (!conn->current_query->row) {
                     if (conn->current_query->end_callback) {
-                        conn->current_query->end_callback(conn->current_query->end_cb_privdata,
+                        conn->current_query->end_callback(conn->current_query,
                                                           conn->dr);
                     }
                     __mariadb_handle_result_free(conn);
