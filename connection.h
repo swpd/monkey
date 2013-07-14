@@ -35,6 +35,8 @@ typedef enum {
     CONN_STATE_ABORT
 } mariadb_conn_state_t;
 
+#define DEFAULT_CIPHER "ECDHE-RSA-AES128-SHA256:AES128-GCM-SHA256:RC4:HIGH:!MD5:!aNULL:!EDH"
+
 typedef struct mariadb_conn_config {
     char *user;
     char *password;

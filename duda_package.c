@@ -31,6 +31,7 @@ mariadb_object_t *get_mariadb_api()
 
     /* Map API calls */
     mariadb->init              = mariadb_init;
+    mariadb->ssl_set           = mariadb_ssl_set;
     mariadb->connect           = mariadb_connect;
     mariadb->disconnect        = mariadb_disconnect;
     mariadb->escape            = mariadb_real_escape_string;

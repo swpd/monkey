@@ -29,6 +29,8 @@ pthread_key_t mariadb_conn_list;
 typedef struct duda_api_mariadb {
     mariadb_conn_t *(*init)(duda_request_t *, char *, char *, char *, char *,
                             unsigned int, char *, unsigned long);
+    void (*ssl_set)(mariadb_conn_t *, const char *, const char *, const char*,
+                    const char *, const char *);
     int (*connect)(mariadb_conn_t *, mariadb_connect_cb *);
     void (*disconnect)(mariadb_conn_t *, mariadb_disconnect_cb *);
     unsigned long (*escape)(mariadb_conn_t *, char *, const char *, unsigned long);
@@ -65,6 +67,8 @@ static inline mariadb_conn_t *mariadb_get_conn(int fd)
 mariadb_conn_t *mariadb_init(duda_request_t * dr, char *user, char *password,
                              char *ip, char *db, unsigned int port,
                              char *unix_socket, unsigned long client_flag);
+void mariadb_ssl_set(mariadb_conn_t *conn, const char *key, const char *cert,
+                     const char *ca, const char *capath, const char *cipher);
 int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb);
 void mariadb_disconnect(mariadb_conn_t *conn, mariadb_disconnect_cb *cb);
 int mariadb_query(mariadb_conn_t *conn, const char * query_str,

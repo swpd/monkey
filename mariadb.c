@@ -25,10 +25,10 @@ static void __mariadb_handle_disconnect(mariadb_conn_t *conn, int status)
 {
     mk_list_del(&conn->_head);
     mysql_close(conn->mysql);
-    conn->state = CONN_STATE_CLOSED;
     if (conn->state >= CONN_STATE_CONNECTED && conn->disconnect_cb) {
         conn->disconnect_cb(conn, status);
     }
+    conn->state = CONN_STATE_CLOSED;
     mariadb_conn_free(conn);
     return;
 }
@@ -183,6 +183,24 @@ mariadb_conn_t *mariadb_init(duda_request_t *dr, char *user, char *password,
     mk_list_init(&conn->queries);
 
     return conn;
+}
+
+/* This function should be called before mariadb_connect */
+void mariadb_ssl_set(mariadb_conn_t *conn, const char *key, const char *cert,
+                     const char *ca, const char *capath, const char *cipher)
+{
+    conn->config.ssl_key    = monkey->str_dup(key);
+    conn->config.ssl_cert   = monkey->str_dup(cert);
+    conn->config.ssl_ca     = monkey->str_dup(ca);
+    conn->config.ssl_capath = monkey->str_dup(capath);
+    if (cipher) {
+        conn->config.ssl_cipher = monkey->str_dup(cipher);
+    } else {
+        conn->config.ssl_cipher = DEFAULT_CIPHER;
+    }
+    mysql_ssl_set(conn->mysql, conn->config.ssl_key, conn->config.ssl_cert,
+                  conn->config.ssl_ca, conn->config.ssl_capath,
+                  conn->config.ssl_cipher);
 }
 
 int mariadb_query(mariadb_conn_t *conn, const char * query_str,
@@ -375,11 +393,11 @@ int mariadb_read(int fd, void *data)
 int mariadb_write(int fd, void *data)
 {
     (void) data;
-    msg->info("[FD %i] MariaDB Connection Hander / write\n", fd);
+    msg->info("[FD %i] MariaDB Connection Hander / write", fd);
 
     mariadb_conn_t *conn = mariadb_get_conn(fd);
     if (conn == NULL) {
-        msg->err("[fd %i] Error: MariaDB Connection Not Found\n", fd);
+        msg->err("[fd %i] Error: MariaDB Connection Not Found", fd);
         return DUDA_EVENT_CLOSE;
     }
     return DUDA_EVENT_OWNED;
@@ -388,11 +406,11 @@ int mariadb_write(int fd, void *data)
 int mariadb_error(int fd, void *data)
 {
     (void) data;
-    msg->info("[FD %i] MariaDB Connection Handler / error\n", fd);
+    msg->info("[FD %i] MariaDB Connection Handler / error", fd);
 
     mariadb_conn_t *conn = mariadb_get_conn(fd);
     if (conn == NULL) {
-        msg->err("[fd %i] Error: MariaDB Connection Not Found\n", fd);
+        msg->err("[fd %i] Error: MariaDB Connection Not Found", fd);
         return DUDA_EVENT_CLOSE;
     }
 
@@ -409,11 +427,11 @@ int mariadb_error(int fd, void *data)
 int mariadb_close(int fd, void *data)
 {
     (void) data;
-    msg->info("[FD %i] MariaDB Connection Handler / close\n", fd);
+    msg->info("[FD %i] MariaDB Connection Handler / close", fd);
 
     mariadb_conn_t *conn = mariadb_get_conn(fd);
     if (conn == NULL) {
-        msg->err("[fd %i] Error: MariaDB Connection Not Found\n", fd);
+        msg->err("[fd %i] Error: MariaDB Connection Not Found", fd);
         return DUDA_EVENT_CLOSE;
     }
     __mariadb_handle_disconnect(conn, MARIADB_ERR);
@@ -423,6 +441,6 @@ int mariadb_close(int fd, void *data)
 int mariadb_timeout(int fd, void *data)
 {
     (void) data;
-    msg->info("[FD %i] MariaDB Connection Handler / timeout\n", fd);
+    msg->info("[FD %i] MariaDB Connection Handler / timeout", fd);
     return DUDA_EVENT_OWNED;
 }
