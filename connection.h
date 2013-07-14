@@ -54,7 +54,7 @@ typedef struct mariadb_conn_config {
 
 struct mariadb_conn; /* forward declaration */
 typedef void (mariadb_connect_cb)(struct mariadb_conn *conn, int status);
-typedef void (mariadb_disconnect_cb)(struct mariadb_conn *conn);
+typedef void (mariadb_disconnect_cb)(struct mariadb_conn *conn, int status);
 
 typedef struct mariadb_conn {
     struct duda_request *dr;

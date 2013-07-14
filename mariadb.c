@@ -21,13 +21,13 @@
 
 #include "mariadb.h"
 
-static void __mariadb_handle_disconnect(mariadb_conn_t *conn)
+static void __mariadb_handle_disconnect(mariadb_conn_t *conn, int status)
 {
     mk_list_del(&conn->_head);
     mysql_close(conn->mysql);
     conn->state = CONN_STATE_CLOSED;
-    if (conn->disconnect_cb) {
-        conn->disconnect_cb(conn);
+    if (conn->state >= CONN_STATE_CONNECTED && conn->disconnect_cb) {
+        conn->disconnect_cb(conn, status);
     }
     mariadb_conn_free(conn);
     return;
@@ -144,7 +144,7 @@ static void __mariadb_handle_query(mariadb_conn_t *conn)
     event->mode(conn->fd, DUDA_EVENT_SLEEP, DUDA_EVENT_LEVEL_TRIGGERED);
     if (conn->disconnect_on_empty) {
         event->delete(conn->fd);
-        __mariadb_handle_disconnect(conn);
+        __mariadb_handle_disconnect(conn, MARIADB_OK);
     }
     return;
 }
@@ -218,8 +218,7 @@ int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb)
                                           conn->config.unix_socket,
                                           conn->config.client_flag);
         if (!conn->mysql_ret && mysql_errno(conn->mysql) > 0) {
-            msg->err("MariaDB Connect Error: %s", conn->fd,
-                     mysql_error(conn->mysql));
+            msg->err("MariaDB Connect Error: %s", mysql_error(conn->mysql));
             if (conn->connect_cb) {
                 conn->connect_cb(conn, MARIADB_ERR);
             }
@@ -277,18 +276,18 @@ void mariadb_disconnect(mariadb_conn_t *conn, mariadb_disconnect_cb *cb)
         return;
     }
     event->delete(conn->fd);
-    __mariadb_handle_disconnect(conn);
+    __mariadb_handle_disconnect(conn, MARIADB_OK);
     return;
 }
 
 int mariadb_read(int fd, void *data)
 {
     (void) data;
-    msg->info("[FD %i] MariaDB Connection Handler / read\n", fd);
+    msg->info("[FD %i] MariaDB Connection Handler / read", fd);
     mariadb_conn_t *conn = mariadb_get_conn(fd);
 
     if (conn == NULL) {
-        msg->err("[fd %i] Error: MariaDB Connection Not Found\n", fd);
+        msg->err("[fd %i] Error: MariaDB Connection Not Found", fd);
         return DUDA_EVENT_CLOSE;
     }
 
@@ -402,7 +401,7 @@ int mariadb_error(int fd, void *data)
             mysql_free_result(conn->current_query->result);
         }
     }
-    __mariadb_handle_disconnect(conn);
+    __mariadb_handle_disconnect(conn, MARIADB_ERR);
 
     return DUDA_EVENT_OWNED;
 }
@@ -417,7 +416,7 @@ int mariadb_close(int fd, void *data)
         msg->err("[fd %i] Error: MariaDB Connection Not Found\n", fd);
         return DUDA_EVENT_CLOSE;
     }
-    __mariadb_handle_disconnect(conn);
+    __mariadb_handle_disconnect(conn, MARIADB_ERR);
     return DUDA_EVENT_CLOSE;
 }
 
