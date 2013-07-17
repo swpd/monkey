@@ -4,7 +4,7 @@ CC_QUIET= @echo -n; $CC
 CFLAGS  = $CFLAGS
 LDFLAGS = $LDFLAGS
 DEFS    = $DEFS
-INCDIR  = ../../../../src/include -I../../src
+INCDIR  = ../../../../src/include -I../../src -Ideps/libmariadbclient/include
 OBJECTS = duda_package.o mariadb.o connection.o query.o
 SOURCES = duda_package.c mariadb.c connection.c query.c
 
