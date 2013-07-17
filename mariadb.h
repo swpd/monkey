@@ -52,9 +52,12 @@ static inline int mariadb_init_keys()
 }
 
 int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb);
+
 void mariadb_disconnect(mariadb_conn_t *conn, mariadb_disconnect_cb *cb);
+
 unsigned long mariadb_real_escape_string(mariadb_conn_t *conn, char *to,
                                          const char *from, unsigned long length);
+
 int mariadb_query(mariadb_conn_t *conn, const char * query_str,
                   mariadb_query_result_cb *result_cb,
                   mariadb_query_row_cb *row_cb, void *row_cb_privdata,

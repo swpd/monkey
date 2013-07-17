@@ -65,6 +65,7 @@ static void __mariadb_handle_result_free(mariadb_conn_t *conn)
     conn->state = CONN_STATE_RESULT_FREED;
     conn->current_query = NULL;
     mariadb_query_free(query);
+    conn->state = CONN_STATE_CONNECTED;
     return;
 }
 
@@ -82,8 +83,13 @@ static void __mariadb_handle_row(mariadb_conn_t *conn)
         conn->state = CONN_STATE_ROW_FETCHED;
         /* all rows have been fetched */
         if (!query->row) {
-            if (query->end_callback) {
-                query->end_callback(query, conn->dr);
+            if (mysql_errno(conn->mysql) > 0) {
+                msg->err("[FD %i] MariaDB Fetch Result Row Error: %s", conn->fd,
+                         mysql_error(conn->mysql));
+            } else {
+                if (query->end_callback) {
+                    query->end_callback(query, conn->dr);
+                }
             }
             __mariadb_handle_result_free(conn);
             break;
@@ -104,11 +110,17 @@ static void __mariadb_handle_result(mariadb_conn_t *conn)
     if (query->result_callback) {
         query->result_callback(query, conn->dr);
     }
+    if (!query->result) {
+        mariadb_query_free(query);
+        conn->state = CONN_STATE_CONNECTED;
+        return;
+    }
     if (query->abort) {
         if (query->result) {
             __mariadb_handle_result_free(conn);
         } else {
             mariadb_query_free(query);
+            conn->state = CONN_STATE_CONNECTED;
         }
         return;
     }
@@ -135,6 +147,7 @@ static void __mariadb_handle_query(mariadb_conn_t *conn)
         conn->current_query = query;
         if (query->abort) {
             mariadb_query_free(query);
+            conn->state = CONN_STATE_CONNECTED;
             continue;
         }
 
@@ -154,6 +167,9 @@ static void __mariadb_handle_query(mariadb_conn_t *conn)
             } else {
                 conn->state = CONN_STATE_QUERIED;
                 __mariadb_handle_result(conn);
+                if (conn->state != CONN_STATE_CONNECTED) {
+                    return;
+                }
             }
         } else {
             msg->err("[FD %i] MariaDB Query Statement Missing", conn->fd);
@@ -317,7 +333,7 @@ int mariadb_on_read(int fd, void *data)
             } else {
                 conn->state = CONN_STATE_QUERIED;
                 __mariadb_handle_result(conn);
-                if (conn->state == CONN_STATE_RESULT_FREED) {
+                if (conn->state == CONN_STATE_CONNECTED) {
                     __mariadb_handle_query(conn);
                 }
             }
@@ -331,12 +347,17 @@ int mariadb_on_read(int fd, void *data)
             if (!status) {
                 conn->state = CONN_STATE_ROW_FETCHED;
                 if (!conn->current_query->row) {
-                    if (conn->current_query->end_callback) {
-                        conn->current_query->end_callback(conn->current_query,
-                                                          conn->dr);
+                    if (mysql_errno(conn->mysql) > 0) {
+                        msg->err("[FD %i] MariaDB Fetch Result Row Error: %s", conn->fd,
+                                 mysql_error(conn->mysql));
+                    } else {
+                        if (conn->current_query->end_callback) {
+                            conn->current_query->end_callback(conn->current_query,
+                                                              conn->dr);
+                        }
                     }
                     __mariadb_handle_result_free(conn);
-                    if (conn->state == CONN_STATE_RESULT_FREED) {
+                    if (conn->state == CONN_STATE_CONNECTED) {
                         __mariadb_handle_query(conn);
                     }
                     break;
@@ -355,7 +376,9 @@ int mariadb_on_read(int fd, void *data)
         status = mysql_free_result_cont(conn->current_query->result, MYSQL_WAIT_READ);
         if (!status) {
             conn->state = CONN_STATE_RESULT_FREED;
+            conn->current_query = NULL;
             mariadb_query_free(conn->current_query);
+            conn->state = CONN_STATE_CONNECTED;
             __mariadb_handle_query(conn);
         }
         break;
