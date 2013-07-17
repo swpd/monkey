@@ -171,60 +171,6 @@ static void __mariadb_handle_query(mariadb_conn_t *conn)
     return;
 }
 
-mariadb_conn_t *mariadb_init(duda_request_t *dr, char *user, char *password,
-                             char *ip, char *db, unsigned int port,
-                             char *unix_socket, unsigned long client_flag)
-{
-    mariadb_conn_t *conn = monkey->mem_alloc(sizeof(mariadb_conn_t));
-    if (!conn) {
-        return NULL;
-    }
-
-    conn->dr                  = dr;
-    conn->config.user         = monkey->str_dup(user);
-    conn->config.password     = monkey->str_dup(password);
-    conn->config.ip           = monkey->str_dup(ip);
-    conn->config.db           = monkey->str_dup(db);
-    conn->config.port         = port;
-    conn->config.unix_socket  = monkey->str_dup(unix_socket);
-    conn->config.client_flag  = client_flag;
-    conn->config.ssl_key      = NULL;
-    conn->config.ssl_cert     = NULL;
-    conn->config.ssl_ca       = NULL;
-    conn->config.ssl_capath   = NULL;
-    conn->config.ssl_cipher   = NULL;
-    conn->fd                  = 0;
-    conn->state               = CONN_STATE_CLOSED;
-    conn->connect_cb          = NULL;
-    conn->disconnect_cb       = NULL;
-    conn->current_query       = NULL;
-    conn->disconnect_on_empty = 0;
-    conn->mysql               = mysql_init(NULL);
-
-    mysql_options(conn->mysql, MYSQL_OPT_NONBLOCK, 0);
-    mk_list_init(&conn->queries);
-
-    return conn;
-}
-
-/* This function should be called before mariadb_connect */
-void mariadb_ssl_set(mariadb_conn_t *conn, const char *key, const char *cert,
-                     const char *ca, const char *capath, const char *cipher)
-{
-    conn->config.ssl_key    = monkey->str_dup(key);
-    conn->config.ssl_cert   = monkey->str_dup(cert);
-    conn->config.ssl_ca     = monkey->str_dup(ca);
-    conn->config.ssl_capath = monkey->str_dup(capath);
-    if (cipher) {
-        conn->config.ssl_cipher = monkey->str_dup(cipher);
-    } else {
-        conn->config.ssl_cipher = DEFAULT_CIPHER;
-    }
-    mysql_ssl_set(conn->mysql, conn->config.ssl_key, conn->config.ssl_cert,
-                  conn->config.ssl_ca, conn->config.ssl_capath,
-                  conn->config.ssl_cipher);
-}
-
 unsigned long mariadb_real_escape_string(mariadb_conn_t *conn, char *to,
                                          const char *from, unsigned long length)
 {
@@ -293,8 +239,8 @@ int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb)
         }
 
         event->add(conn->fd, DUDA_EVENT_READ, DUDA_EVENT_LEVEL_TRIGGERED,
-                   mariadb_read, mariadb_write, mariadb_error, mariadb_close,
-                   mariadb_timeout, NULL);
+                   mariadb_on_read, mariadb_on_write, mariadb_on_error,
+                   mariadb_on_close, mariadb_on_timeout, NULL);
 
         struct mk_list *conn_list = pthread_getspecific(mariadb_conn_list);
         if (conn_list == NULL) {
@@ -327,7 +273,7 @@ void mariadb_disconnect(mariadb_conn_t *conn, mariadb_disconnect_cb *cb)
     return;
 }
 
-int mariadb_read(int fd, void *data)
+int mariadb_on_read(int fd, void *data)
 {
     (void) data;
     msg->info("[FD %i] MariaDB Connection Handler / read", fd);
@@ -419,7 +365,7 @@ int mariadb_read(int fd, void *data)
     return DUDA_EVENT_OWNED;
 }
 
-int mariadb_write(int fd, void *data)
+int mariadb_on_write(int fd, void *data)
 {
     (void) data;
     msg->info("[FD %i] MariaDB Connection Hander / write", fd);
@@ -432,7 +378,7 @@ int mariadb_write(int fd, void *data)
     return DUDA_EVENT_OWNED;
 }
 
-int mariadb_error(int fd, void *data)
+int mariadb_on_error(int fd, void *data)
 {
     (void) data;
     msg->info("[FD %i] MariaDB Connection Handler / error", fd);
@@ -453,7 +399,7 @@ int mariadb_error(int fd, void *data)
     return DUDA_EVENT_OWNED;
 }
 
-int mariadb_close(int fd, void *data)
+int mariadb_on_close(int fd, void *data)
 {
     (void) data;
     msg->info("[FD %i] MariaDB Connection Handler / close", fd);
@@ -467,7 +413,7 @@ int mariadb_close(int fd, void *data)
     return DUDA_EVENT_CLOSE;
 }
 
-int mariadb_timeout(int fd, void *data)
+int mariadb_on_timeout(int fd, void *data)
 {
     (void) data;
     msg->info("[FD %i] MariaDB Connection Handler / timeout", fd);

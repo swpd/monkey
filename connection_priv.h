@@ -67,10 +67,18 @@ struct mariadb_conn {
     struct mk_list _head;
 };
 
+mariadb_conn_t *mariadb_conn_init(duda_request_t *dr, char *user, char *password,
+                                  char *ip, char *db, unsigned int port,
+                                  char *unix_socket, unsigned long client_flag);
+
+void mariadb_conn_ssl_set(mariadb_conn_t *conn, const char *key, const char *cert,
+                          const char *ca, const char *capath, const char *cipher);
+
 int mariadb_conn_add_query(mariadb_conn_t *conn, const char *query_str,
                            mariadb_query_result_cb *result_cb,
                            mariadb_query_row_cb *row_cb, void *row_cb_privdata,
                            mariadb_query_end_cb *end_cb);
 
 void mariadb_conn_free(mariadb_conn_t *conn);
+
 #endif

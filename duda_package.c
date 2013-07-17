@@ -33,8 +33,8 @@ mariadb_object_t *get_mariadb_api()
     mariadb = monkey->mem_alloc(sizeof(mariadb_object_t));
 
     /* Map API calls */
-    mariadb->init              = mariadb_init;
-    mariadb->ssl_set           = mariadb_ssl_set;
+    mariadb->init              = mariadb_conn_init;
+    mariadb->ssl_set           = mariadb_conn_ssl_set;
     mariadb->connect           = mariadb_connect;
     mariadb->disconnect        = mariadb_disconnect;
     mariadb->escape            = mariadb_real_escape_string;

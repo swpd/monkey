@@ -24,6 +24,27 @@
 #include "query.h"
 #include "query_priv.h"
 
+mariadb_query_t *mariadb_query_init(const char *query_str,
+                                    mariadb_query_result_cb *result_cb,
+                                    mariadb_query_row_cb *row_cb, void *row_cb_privdata,
+                                    mariadb_query_end_cb *end_cb)
+{
+    mariadb_query_t *query = monkey->mem_alloc(sizeof(mariadb_query_t));
+    if (!query)
+        return NULL;
+    query->query_str       = monkey->str_dup(query_str);
+    query->n_fields        = 0;
+    query->fields          = NULL;
+    query->result_callback = result_cb;
+    query->row_callback    = row_cb;
+    query->end_callback    = end_cb;
+    query->row_cb_privdata = row_cb_privdata;
+    query->error           = 0;
+    query->result          = NULL;
+    query->abort           = QUERY_ABORT_NO;
+    return query;
+}
+
 void mariadb_query_free(mariadb_query_t *query)
 {
     mk_list_del(&query->_head);

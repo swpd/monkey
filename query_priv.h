@@ -48,6 +48,11 @@ static inline void mariadb_query_abort(mariadb_query_t *query)
     query->abort = QUERY_ABORT_YES;
 }
 
+mariadb_query_t *mariadb_query_init(const char *query_str,
+                                    mariadb_query_result_cb *result_cb,
+                                    mariadb_query_row_cb *row_cb, void *row_cb_privdata,
+                                    mariadb_query_end_cb *end_cb);
+
 void mariadb_query_free(mariadb_query_t *query);
 
 #endif

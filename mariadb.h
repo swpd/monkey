@@ -51,11 +51,6 @@ static inline int mariadb_init_keys()
     return MARIADB_OK;
 }
 
-mariadb_conn_t *mariadb_init(duda_request_t * dr, char *user, char *password,
-                             char *ip, char *db, unsigned int port,
-                             char *unix_socket, unsigned long client_flag);
-void mariadb_ssl_set(mariadb_conn_t *conn, const char *key, const char *cert,
-                     const char *ca, const char *capath, const char *cipher);
 int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb);
 void mariadb_disconnect(mariadb_conn_t *conn, mariadb_disconnect_cb *cb);
 unsigned long mariadb_real_escape_string(mariadb_conn_t *conn, char *to,
@@ -65,10 +60,10 @@ int mariadb_query(mariadb_conn_t *conn, const char * query_str,
                   mariadb_query_row_cb *row_cb, void *row_cb_privdata,
                   mariadb_query_end_cb *end_cb);
 
-int mariadb_read(int fd, void *data);
-int mariadb_write(int fd, void *data);
-int mariadb_error(int fd, void *data);
-int mariadb_close(int fd, void *data);
-int mariadb_timeout(int fd, void *data);
+int mariadb_on_read(int fd, void *data);
+int mariadb_on_write(int fd, void *data);
+int mariadb_on_error(int fd, void *data);
+int mariadb_on_close(int fd, void *data);
+int mariadb_on_timeout(int fd, void *data);
 
 #endif
