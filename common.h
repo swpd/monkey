@@ -1,4 +1,3 @@
-#include <mysql/mysql.h>
 #include "duda_api.h"
 
 #define MARIADB_OK 0

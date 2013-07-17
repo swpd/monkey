@@ -19,14 +19,33 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include <mysql.h>
 #include "mariadb.h"
+#include "query_priv.h"
+#include "connection_priv.h"
+
+static inline mariadb_conn_t *mariadb_get_conn(int fd)
+{
+    struct mk_list *conn_list, *head;
+    mariadb_conn_t *conn = NULL;
+
+    conn_list = pthread_getspecific(mariadb_conn_list);
+    mk_list_foreach(head, conn_list) {
+        conn = mk_list_entry(head, mariadb_conn_t, _head);
+        if (conn->fd == fd) {
+            break;
+        }
+    }
+    return conn;
+}
+
 
 static void __mariadb_handle_disconnect(mariadb_conn_t *conn, int status)
 {
     mk_list_del(&conn->_head);
     mysql_close(conn->mysql);
     if (conn->state >= CONN_STATE_CONNECTED && conn->disconnect_cb) {
-        conn->disconnect_cb(conn, status);
+        conn->disconnect_cb(conn, status, conn->dr);
     }
     conn->state = CONN_STATE_CLOSED;
     mariadb_conn_free(conn);
@@ -206,6 +225,12 @@ void mariadb_ssl_set(mariadb_conn_t *conn, const char *key, const char *cert,
                   conn->config.ssl_cipher);
 }
 
+unsigned long mariadb_real_escape_string(mariadb_conn_t *conn, char *to,
+                                         const char *from, unsigned long length)
+{
+    return mysql_real_escape_string(conn->mysql, to, from, length);
+}
+
 int mariadb_query(mariadb_conn_t *conn, const char * query_str,
                   mariadb_query_result_cb *result_cb,
                   mariadb_query_row_cb *row_cb, void *row_cb_privdata,
@@ -242,7 +267,7 @@ int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb)
         if (!conn->mysql_ret && mysql_errno(conn->mysql) > 0) {
             msg->err("MariaDB Connect Error: %s", mysql_error(conn->mysql));
             if (conn->connect_cb) {
-                conn->connect_cb(conn, MARIADB_ERR);
+                conn->connect_cb(conn, MARIADB_ERR, conn->dr);
             }
             mariadb_conn_free(conn);
             return MARIADB_ERR;
@@ -256,14 +281,14 @@ int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb)
                 msg->err("[FD %i] MariaDB Connect Error: %s", conn->fd,
                          mysql_error(conn->mysql));
                 if (conn->connect_cb) {
-                    conn->connect_cb(conn, MARIADB_ERR);
+                    conn->connect_cb(conn, MARIADB_ERR, conn->dr);
                 }
                 mariadb_conn_free(conn);
                 return MARIADB_ERR;
             }
             conn->state = CONN_STATE_CONNECTED;
             if (conn->connect_cb) {
-                conn->connect_cb(conn, MARIADB_OK);
+                conn->connect_cb(conn, MARIADB_OK, conn->dr);
             }
         }
 
@@ -323,12 +348,12 @@ int mariadb_read(int fd, void *data)
                 msg->err("[fd %i] MariaDB Connect Error: %s", fd,
                          mysql_error(conn->mysql));
                 if (conn->connect_cb)
-                    conn->connect_cb(conn, MARIADB_ERR);
+                    conn->connect_cb(conn, MARIADB_ERR, conn->dr);
                 return DUDA_EVENT_CLOSE;
             }
             conn->state = CONN_STATE_CONNECTED;
             if (conn->connect_cb)
-                conn->connect_cb(conn, MARIADB_OK);
+                conn->connect_cb(conn, MARIADB_OK, conn->dr);
             __mariadb_handle_query(conn);
         }
         break;

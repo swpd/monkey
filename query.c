@@ -19,8 +19,10 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include <mysql.h>
 #include "common.h"
 #include "query.h"
+#include "query_priv.h"
 
 void mariadb_query_free(mariadb_query_t *query)
 {

@@ -19,11 +19,35 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef MARIADB_CONNECTION_H
-#define MARIADB_CONNECTION_H
+#ifndef MARIADB_QUERY_PRIV_H
+#define MARIADB_QUERY_PRIV_H
 
-typedef struct mariadb_conn mariadb_conn_t; /* forward declaration */
-typedef void (mariadb_connect_cb)(mariadb_conn_t *conn, int status, duda_request_t *dr);
-typedef void (mariadb_disconnect_cb)(mariadb_conn_t *conn, int status, duda_request_t *dr);
+typedef enum {
+    QUERY_ABORT_NO, QUERY_ABORT_YES
+} mariadb_query_abort_t;
+
+struct mariadb_query {
+    char *query_str;
+    MYSQL_RES *result;
+    MYSQL_ROW row;
+    unsigned int n_fields;
+    char **fields;
+    int error;
+    mariadb_query_abort_t abort;
+
+    mariadb_query_result_cb *result_callback;
+    mariadb_query_row_cb *row_callback;
+    mariadb_query_end_cb *end_callback;
+    void *row_cb_privdata;
+
+    struct mk_list _head;
+};
+
+static inline void mariadb_query_abort(mariadb_query_t *query)
+{
+    query->abort = QUERY_ABORT_YES;
+}
+
+void mariadb_query_free(mariadb_query_t *query);
 
 #endif

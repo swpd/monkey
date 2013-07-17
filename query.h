@@ -22,38 +22,10 @@
 #ifndef MARIADB_QUERY_H
 #define MARIADB_QUERY_H
 
-typedef enum {
-    QUERY_ABORT_NO, QUERY_ABORT_YES
-} mariadb_query_abort_t;
-
-struct mariadb_query;
-typedef void (mariadb_query_result_cb)(struct mariadb_query *query, duda_request_t *dr);
+typedef struct mariadb_query mariadb_query_t;
+typedef void (mariadb_query_result_cb)(mariadb_query_t *query, duda_request_t *dr);
 typedef void (mariadb_query_row_cb)(void *privdata, unsigned long n_fields,
               char **fields, char **values, duda_request_t *dr);
-typedef void (mariadb_query_end_cb)(struct mariadb_query *query, duda_request_t *dr);
-
-typedef struct mariadb_query {
-    char *query_str;
-    MYSQL_RES *result;
-    MYSQL_ROW row;
-    unsigned int n_fields;
-    char **fields;
-    int error;
-    mariadb_query_abort_t abort;
-
-    mariadb_query_result_cb *result_callback;
-    mariadb_query_row_cb *row_callback;
-    mariadb_query_end_cb *end_callback;
-    void *row_cb_privdata;
-
-    struct mk_list _head;
-} mariadb_query_t;
-
-static inline void mariadb_query_abort(mariadb_query_t *query)
-{
-    query->abort = QUERY_ABORT_YES;
-}
-
-void mariadb_query_free(mariadb_query_t *query);
+typedef void (mariadb_query_end_cb)(mariadb_query_t *query, duda_request_t *dr);
 
 #endif

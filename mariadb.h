@@ -22,6 +22,8 @@
 #ifndef DUDA_PACKAGE_MARIADB_H
 #define DUDA_PACKAGE_MARIADB_H
 
+#include "common.h"
+#include "query.h"
 #include "connection.h"
 
 pthread_key_t mariadb_conn_list;
@@ -49,21 +51,6 @@ static inline int mariadb_init_keys()
     return MARIADB_OK;
 }
 
-static inline mariadb_conn_t *mariadb_get_conn(int fd)
-{
-    struct mk_list *conn_list, *head;
-    mariadb_conn_t *conn = NULL;
-
-    conn_list = pthread_getspecific(mariadb_conn_list);
-    mk_list_foreach(head, conn_list) {
-        conn = mk_list_entry(head, mariadb_conn_t, _head);
-        if (conn->fd == fd) {
-            break;
-        }
-    }
-    return conn;
-}
-
 mariadb_conn_t *mariadb_init(duda_request_t * dr, char *user, char *password,
                              char *ip, char *db, unsigned int port,
                              char *unix_socket, unsigned long client_flag);
@@ -71,17 +58,12 @@ void mariadb_ssl_set(mariadb_conn_t *conn, const char *key, const char *cert,
                      const char *ca, const char *capath, const char *cipher);
 int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb);
 void mariadb_disconnect(mariadb_conn_t *conn, mariadb_disconnect_cb *cb);
+unsigned long mariadb_real_escape_string(mariadb_conn_t *conn, char *to,
+                                         const char *from, unsigned long length);
 int mariadb_query(mariadb_conn_t *conn, const char * query_str,
                   mariadb_query_result_cb *result_cb,
                   mariadb_query_row_cb *row_cb, void *row_cb_privdata,
                   mariadb_query_end_cb *end_cb);
-
-static inline unsigned long mariadb_real_escape_string(mariadb_conn_t *conn,
-                                                       char *to, const char *from,
-                                                       unsigned long length)
-{
-    return mysql_real_escape_string(conn->mysql, to, from, length);
-}
 
 int mariadb_read(int fd, void *data);
 int mariadb_write(int fd, void *data);
