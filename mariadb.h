@@ -22,6 +22,21 @@
 #ifndef DUDA_PACKAGE_MARIADB_H
 #define DUDA_PACKAGE_MARIADB_H
 
+#ifndef _mysql_com_h
+#define CLIENT_FOUND_ROWS	    2	        /* Found instead of affected rows */
+#define CLIENT_NO_SCHEMA	    16	        /* Don't allow database.table.column */
+#define CLIENT_COMPRESS		    32	        /* Can use compression protocol */
+#define CLIENT_ODBC		        64	        /* Odbc client */
+#define CLIENT_LOCAL_FILES	    128	        /* Can use LOAD DATA LOCAL */
+#define CLIENT_IGNORE_SPACE	    256	        /* Ignore spaces before '(' */
+#define CLIENT_INTERACTIVE	    1024	    /* This is an interactive client */
+#define CLIENT_SSL              2048	    /* Switch to SSL after handshake */
+#define CLIENT_IGNORE_SIGPIPE   4096        /* IGNORE sigpipes */
+#define CLIENT_MULTI_STATEMENTS (1UL << 16) /* Enable/disable multi-stmt support */
+#define CLIENT_MULTI_RESULTS    (1UL << 17) /* Enable/disable multi-results */
+#define CLIENT_REMEMBER_OPTIONS (1UL << 31)
+#endif
+
 #include "common.h"
 #include "query.h"
 #include "connection.h"

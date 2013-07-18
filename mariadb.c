@@ -201,7 +201,7 @@ static void __mariadb_handle_next_result(mariadb_conn_t *conn)
                 return;
             }
         } else {
-            msg->err("[fd %i] mariadb execute statement error: %s", conn->fd,
+            msg->err("[FD %i] MariaDB Execute Statement Error: %s", conn->fd,
                      mysql_error(conn->mysql));
         }
     }
