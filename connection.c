@@ -54,9 +54,9 @@ mariadb_conn_t *mariadb_conn_init(duda_request_t *dr, char *user, char *password
     conn->disconnect_cb       = NULL;
     conn->current_query       = NULL;
     conn->disconnect_on_empty = 0;
-    conn->mysql               = mysql_init(NULL);
+    mysql_init(&conn->mysql);
 
-    mysql_options(conn->mysql, MYSQL_OPT_NONBLOCK, 0);
+    mysql_options(&conn->mysql, MYSQL_OPT_NONBLOCK, 0);
     mk_list_init(&conn->queries);
 
     return conn;
@@ -75,7 +75,7 @@ void mariadb_conn_ssl_set(mariadb_conn_t *conn, const char *key, const char *cer
     } else {
         conn->config.ssl_cipher = DEFAULT_CIPHER;
     }
-    mysql_ssl_set(conn->mysql, conn->config.ssl_key, conn->config.ssl_cert,
+    mysql_ssl_set(&conn->mysql, conn->config.ssl_key, conn->config.ssl_cert,
                   conn->config.ssl_ca, conn->config.ssl_capath,
                   conn->config.ssl_cipher);
 }

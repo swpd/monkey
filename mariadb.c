@@ -61,7 +61,7 @@ static void __mariadb_handle_query(mariadb_conn_t *conn)
         }
 
         if (query->query_str) {
-            status = mysql_real_query_start(&query->error, conn->mysql,
+            status = mysql_real_query_start(&query->error, &conn->mysql,
                                             query->query_str,
                                             strlen(query->query_str));
             if (status) {
@@ -70,7 +70,7 @@ static void __mariadb_handle_query(mariadb_conn_t *conn)
             }
             if (query->error) {
                 msg->err("[FD %i] MariaDB Query Error: %s", conn->fd,
-                         mysql_error(conn->mysql));
+                         mysql_error(&conn->mysql));
                 /* may add a query on error callback to be called here */
                 mariadb_query_free(query);
             } else {
@@ -99,7 +99,7 @@ static void __mariadb_handle_result(mariadb_conn_t *conn)
 {
     mariadb_query_t *query = conn->current_query;
 
-    query->result = mysql_use_result(conn->mysql);
+    query->result = mysql_use_result(&conn->mysql);
     if (query->result_cb) {
         query->result_cb(query, conn->dr);
     }
@@ -143,9 +143,9 @@ static void __mariadb_handle_row(mariadb_conn_t *conn)
         conn->state = CONN_STATE_ROW_FETCHED;
         /* all rows have been fetched */
         if (!query->row) {
-            if (mysql_errno(conn->mysql) > 0) {
+            if (mysql_errno(&conn->mysql) > 0) {
                 msg->err("[FD %i] MariaDB Fetch Result Row Error: %s", conn->fd,
-                         mysql_error(conn->mysql));
+                         mysql_error(&conn->mysql));
             } else {
                 if (query->end_cb) {
                     query->end_cb(query, conn->dr);
@@ -187,7 +187,7 @@ static void __mariadb_handle_next_result(mariadb_conn_t *conn)
     mariadb_query_t *query = conn->current_query;
 
     while (1) {
-        status = mysql_next_result_start(&query->error, conn->mysql);
+        status = mysql_next_result_start(&query->error, &conn->mysql);
         if (status) {
             conn->state = CONN_STATE_NEXT_RESULTING;
             return;
@@ -202,7 +202,7 @@ static void __mariadb_handle_next_result(mariadb_conn_t *conn)
             }
         } else {
             msg->err("[FD %i] MariaDB Execute Statement Error: %s", conn->fd,
-                     mysql_error(conn->mysql));
+                     mysql_error(&conn->mysql));
         }
     }
     conn->current_query = NULL;
@@ -213,7 +213,7 @@ static void __mariadb_handle_next_result(mariadb_conn_t *conn)
 static void __mariadb_handle_disconnect(mariadb_conn_t *conn, int status)
 {
     mk_list_del(&conn->_head);
-    mysql_close(conn->mysql);
+    mysql_close(&conn->mysql);
     if (conn->state >= CONN_STATE_CONNECTED && conn->disconnect_cb) {
         conn->disconnect_cb(conn, status, conn->dr);
     }
@@ -224,7 +224,7 @@ static void __mariadb_handle_disconnect(mariadb_conn_t *conn, int status)
 unsigned long mariadb_real_escape_string(mariadb_conn_t *conn, char *to,
                                          const char *from, unsigned long length)
 {
-    return mysql_real_escape_string(conn->mysql, to, from, length);
+    return mysql_real_escape_string(&conn->mysql, to, from, length);
 }
 
 int mariadb_query(mariadb_conn_t *conn, const char * query_str,
@@ -254,28 +254,28 @@ int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb)
 
     /* whether the connection has already been established */
     if (conn->state == CONN_STATE_CLOSED) { 
-        status = mysql_real_connect_start(&conn->mysql_ret, conn->mysql,
+        status = mysql_real_connect_start(&conn->mysql_ret, &conn->mysql,
                                           conn->config.ip, conn->config.user,
                                           conn->config.password, conn->config.db,
                                           conn->config.port,
                                           conn->config.unix_socket,
                                           conn->config.client_flag);
-        if (!conn->mysql_ret && mysql_errno(conn->mysql) > 0) {
-            msg->err("MariaDB Connect Error: %s", mysql_error(conn->mysql));
+        if (!conn->mysql_ret && mysql_errno(&conn->mysql) > 0) {
+            msg->err("MariaDB Connect Error: %s", mysql_error(&conn->mysql));
             if (conn->connect_cb) {
                 conn->connect_cb(conn, MARIADB_ERR, conn->dr);
             }
             mariadb_conn_free(conn);
             return MARIADB_ERR;
         }
-        conn->fd = mysql_get_socket(conn->mysql);
+        conn->fd = mysql_get_socket(&conn->mysql);
 
         if (status) {
             conn->state = CONN_STATE_CONNECTING;
         } else {
             if (!conn->mysql_ret) {
                 msg->err("[FD %i] MariaDB Connect Error: %s", conn->fd,
-                         mysql_error(conn->mysql));
+                         mysql_error(&conn->mysql));
                 if (conn->connect_cb) {
                     conn->connect_cb(conn, MARIADB_ERR, conn->dr);
                 }
@@ -337,12 +337,12 @@ int mariadb_on_read(int fd, void *data)
     int status;
     switch (conn->state) {
     case CONN_STATE_CONNECTING:
-        status = mysql_real_connect_cont(&conn->mysql_ret, conn->mysql,
+        status = mysql_real_connect_cont(&conn->mysql_ret, &conn->mysql,
                                          MYSQL_WAIT_READ);
         if (!status) {
             if (!conn->mysql_ret) {
                 msg->err("[FD %i] MariaDB Connect Error: %s", fd,
-                         mysql_error(conn->mysql));
+                         mysql_error(&conn->mysql));
                 if (conn->connect_cb)
                     conn->connect_cb(conn, MARIADB_ERR, conn->dr);
                 return DUDA_EVENT_CLOSE;
@@ -354,12 +354,12 @@ int mariadb_on_read(int fd, void *data)
         }
         break;
     case CONN_STATE_QUERYING:
-        status = mysql_real_query_cont(&conn->current_query->error, conn->mysql,
+        status = mysql_real_query_cont(&conn->current_query->error, &conn->mysql,
                                        MYSQL_WAIT_READ);
         if (!status) {
             if (conn->current_query->error) {
                 msg->err("[FD %i] MariaDB Query Error: %s", conn->fd,
-                         mysql_error(conn->mysql));
+                         mysql_error(&conn->mysql));
                 /* may add a query on error cb to be called here */
                 mariadb_query_free(conn->current_query);
                 conn->state = CONN_STATE_CONNECTED;
@@ -383,9 +383,9 @@ int mariadb_on_read(int fd, void *data)
             }
             conn->state = CONN_STATE_ROW_FETCHED;
             if (!conn->current_query->row) {
-                if (mysql_errno(conn->mysql) > 0) {
+                if (mysql_errno(&conn->mysql) > 0) {
                     msg->err("[FD %i] MariaDB Fetch Result Row Error: %s", conn->fd,
-                             mysql_error(conn->mysql));
+                             mysql_error(&conn->mysql));
                 } else {
                     if (conn->current_query->end_cb) {
                         conn->current_query->end_cb(conn->current_query,
@@ -424,7 +424,7 @@ int mariadb_on_read(int fd, void *data)
     case CONN_STATE_NEXT_RESULTING:
         while (1) {
             status = mysql_next_result_cont(&conn->current_query->error,
-                                            conn->mysql, MYSQL_WAIT_READ);
+                                            &conn->mysql, MYSQL_WAIT_READ);
             if (status) {
                 break;
             }
@@ -441,7 +441,7 @@ int mariadb_on_read(int fd, void *data)
                 }
             } else {
                 msg->err("[FD %i] MariaDB Execute Statement Error: %s", conn->fd,
-                         mysql_error(conn->mysql));
+                         mysql_error(&conn->mysql));
             }
         }
         if (conn->state == CONN_STATE_CONNECTED) {

@@ -53,7 +53,7 @@ typedef struct mariadb_conn_config {
 struct mariadb_conn {
     struct duda_request *dr;
     mariadb_conn_config_t config;
-    MYSQL *mysql, *mysql_ret;
+    MYSQL mysql, *mysql_ret;
     int fd;
     mariadb_conn_state_t state;
 
@@ -64,6 +64,7 @@ struct mariadb_conn {
     int disconnect_on_empty;
     struct mk_list queries;
     struct mk_list _head;
+    struct mk_list _pool_head;
 };
 
 mariadb_conn_t *mariadb_conn_init(duda_request_t *dr, char *user, char *password,
