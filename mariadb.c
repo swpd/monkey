@@ -100,8 +100,8 @@ static void __mariadb_handle_result(mariadb_conn_t *conn)
     mariadb_query_t *query = conn->current_query;
 
     query->result = mysql_use_result(conn->mysql);
-    if (query->result_callback) {
-        query->result_callback(query, conn->dr);
+    if (query->result_cb) {
+        query->result_cb(query, conn->dr);
     }
     if (!query->result) {
         mariadb_query_free(query);
@@ -147,15 +147,15 @@ static void __mariadb_handle_row(mariadb_conn_t *conn)
                 msg->err("[FD %i] MariaDB Fetch Result Row Error: %s", conn->fd,
                          mysql_error(conn->mysql));
             } else {
-                if (query->end_callback) {
-                    query->end_callback(query, conn->dr);
+                if (query->end_cb) {
+                    query->end_cb(query, conn->dr);
                 }
             }
             __mariadb_handle_result_free(conn);
             break;
         }
-        if (query->row_callback) {
-            query->row_callback(query->row_cb_privdata, query->n_fields,
+        if (query->row_cb) {
+            query->row_cb(query->row_cb_privdata, query->n_fields,
                                 query->fields, query->row, conn->dr);
         }
     }
@@ -360,7 +360,7 @@ int mariadb_on_read(int fd, void *data)
             if (conn->current_query->error) {
                 msg->err("[FD %i] MariaDB Query Error: %s", conn->fd,
                          mysql_error(conn->mysql));
-                /* may add a query on error callback to be called here */
+                /* may add a query on error cb to be called here */
                 mariadb_query_free(conn->current_query);
                 conn->state = CONN_STATE_CONNECTED;
                 __mariadb_handle_query(conn);
@@ -387,8 +387,8 @@ int mariadb_on_read(int fd, void *data)
                     msg->err("[FD %i] MariaDB Fetch Result Row Error: %s", conn->fd,
                              mysql_error(conn->mysql));
                 } else {
-                    if (conn->current_query->end_callback) {
-                        conn->current_query->end_callback(conn->current_query,
+                    if (conn->current_query->end_cb) {
+                        conn->current_query->end_cb(conn->current_query,
                                                           conn->dr);
                     }
                 }
@@ -398,8 +398,8 @@ int mariadb_on_read(int fd, void *data)
                 }
                 break;
             }
-            if (conn->current_query->row_callback) {
-                conn->current_query->row_callback(conn->current_query->row_cb_privdata,
+            if (conn->current_query->row_cb) {
+                conn->current_query->row_cb(conn->current_query->row_cb_privdata,
                                                   conn->current_query->n_fields,
                                                   conn->current_query->fields,
                                                   conn->current_query->row,

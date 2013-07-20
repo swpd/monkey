@@ -35,9 +35,9 @@ mariadb_query_t *mariadb_query_init(const char *query_str,
     query->query_str       = monkey->str_dup(query_str);
     query->n_fields        = 0;
     query->fields          = NULL;
-    query->result_callback = result_cb;
-    query->row_callback    = row_cb;
-    query->end_callback    = end_cb;
+    query->result_cb       = result_cb;
+    query->row_cb          = row_cb;
+    query->end_cb          = end_cb;
     query->row_cb_privdata = row_cb_privdata;
     query->error           = 0;
     query->result          = NULL;

@@ -35,9 +35,9 @@ struct mariadb_query {
     int error;
     mariadb_query_abort_t abort;
 
-    mariadb_query_result_cb *result_callback;
-    mariadb_query_row_cb *row_callback;
-    mariadb_query_end_cb *end_callback;
+    mariadb_query_result_cb *result_cb;
+    mariadb_query_row_cb *row_cb;
+    mariadb_query_end_cb *end_cb;
     void *row_cb_privdata;
 
     struct mk_list _head;
