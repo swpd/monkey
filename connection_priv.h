@@ -61,7 +61,8 @@ struct mariadb_conn {
     mariadb_disconnect_cb *disconnect_cb;
 
     mariadb_query_t *current_query;
-    int disconnect_on_empty;
+    int disconnect_on_finish;
+    int is_pooled;
     struct mk_list queries;
     struct mk_list _head;
     struct mk_list _pool_head;

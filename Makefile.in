@@ -5,8 +5,8 @@ CFLAGS  = $CFLAGS
 LDFLAGS = $LDFLAGS
 DEFS    = $DEFS
 INCDIR  = ../../../../src/include -I../../src -Ideps/libmariadbclient/include -Ideps/libmariadbclient/obj/include
-OBJECTS = duda_package.o mariadb.o connection.o query.o
-SOURCES = duda_package.c mariadb.c connection.c query.c
+OBJECTS = duda_package.o mariadb.o connection.o query.o pool.o
+SOURCES = duda_package.c mariadb.c connection.c query.c pool.c
 
 all: libmariadbclient.a ../mariadb.dpkg
 

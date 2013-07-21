@@ -23,6 +23,7 @@
 #include "mariadb.h"
 #include "query_priv.h"
 #include "connection_priv.h"
+#include "pool.h"
 
 static inline mariadb_conn_t *mariadb_get_conn(int fd)
 {
@@ -89,7 +90,7 @@ static void __mariadb_handle_query(mariadb_conn_t *conn)
     conn->state         = CONN_STATE_CONNECTED;
     /* all queries have been handled */
     event->mode(conn->fd, DUDA_EVENT_SLEEP, DUDA_EVENT_LEVEL_TRIGGERED);
-    if (conn->disconnect_on_empty) {
+    if (conn->disconnect_on_finish) {
         event->delete(conn->fd);
         __mariadb_handle_disconnect(conn, MARIADB_OK);
     }
@@ -218,7 +219,11 @@ static void __mariadb_handle_disconnect(mariadb_conn_t *conn, int status)
         conn->disconnect_cb(conn, status, conn->dr);
     }
     conn->state = CONN_STATE_CLOSED;
-    mariadb_conn_free(conn);
+    if (conn->is_pooled) {
+        mariadb_pool_reclaim_conn(conn);
+    } else {
+        mariadb_conn_free(conn);
+    }
 }
 
 unsigned long mariadb_real_escape_string(mariadb_conn_t *conn, char *to,
@@ -265,7 +270,11 @@ int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb)
             if (conn->connect_cb) {
                 conn->connect_cb(conn, MARIADB_ERR, conn->dr);
             }
-            mariadb_conn_free(conn);
+            if (conn->is_pooled) {
+                mariadb_pool_reclaim_conn(conn);
+            } else {
+                mariadb_conn_free(conn);
+            }
             return MARIADB_ERR;
         }
         conn->fd = mysql_get_socket(&conn->mysql);
@@ -279,7 +288,11 @@ int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb)
                 if (conn->connect_cb) {
                     conn->connect_cb(conn, MARIADB_ERR, conn->dr);
                 }
-                mariadb_conn_free(conn);
+                if (conn->is_pooled) {
+                    mariadb_pool_reclaim_conn(conn);
+                } else {
+                    mariadb_conn_free(conn);
+                }
                 return MARIADB_ERR;
             }
             conn->state = CONN_STATE_CONNECTED;
@@ -293,8 +306,16 @@ int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb)
                    mariadb_on_close, mariadb_on_timeout, NULL);
 
         struct mk_list *conn_list = pthread_getspecific(mariadb_conn_list);
-        if (conn_list == NULL) {
+        if (!conn_list) {
             conn_list = monkey->mem_alloc(sizeof(struct mk_list));
+            if (!conn_list) {
+                if (conn->is_pooled) {
+                    mariadb_pool_reclaim_conn(conn);
+                } else {
+                    mariadb_conn_free(conn);
+                }
+                return MARIADB_ERR;
+            }
             mk_list_init(conn_list);
             pthread_setspecific(mariadb_conn_list, (void *) conn_list);
         }
@@ -315,7 +336,7 @@ void mariadb_disconnect(mariadb_conn_t *conn, mariadb_disconnect_cb *cb)
     }
 
     if (conn->state != CONN_STATE_CONNECTED) {
-        conn->disconnect_on_empty = 1;
+        conn->disconnect_on_finish = 1;
         return;
     }
     event->delete(conn->fd);
@@ -329,7 +350,7 @@ int mariadb_on_read(int fd, void *data)
     msg->info("[FD %i] MariaDB Connection Handler / read", fd);
     mariadb_conn_t *conn = mariadb_get_conn(fd);
 
-    if (conn == NULL) {
+    if (!conn) {
         msg->err("[FD %i] Error: MariaDB Connection Not Found", fd);
         return DUDA_EVENT_CLOSE;
     }
@@ -460,7 +481,7 @@ int mariadb_on_write(int fd, void *data)
     msg->info("[FD %i] MariaDB Connection Hander / write", fd);
 
     mariadb_conn_t *conn = mariadb_get_conn(fd);
-    if (conn == NULL) {
+    if (!conn) {
         msg->err("[fd %i] Error: MariaDB Connection Not Found", fd);
         return DUDA_EVENT_CLOSE;
     }
@@ -473,7 +494,7 @@ int mariadb_on_error(int fd, void *data)
     msg->info("[FD %i] MariaDB Connection Handler / error", fd);
 
     mariadb_conn_t *conn = mariadb_get_conn(fd);
-    if (conn == NULL) {
+    if (!conn) {
         msg->err("[fd %i] Error: MariaDB Connection Not Found", fd);
         return DUDA_EVENT_CLOSE;
     }
@@ -494,7 +515,7 @@ int mariadb_on_close(int fd, void *data)
     msg->info("[FD %i] MariaDB Connection Handler / close", fd);
 
     mariadb_conn_t *conn = mariadb_get_conn(fd);
-    if (conn == NULL) {
+    if (!conn) {
         msg->err("[fd %i] Error: MariaDB Connection Not Found", fd);
         return DUDA_EVENT_CLOSE;
     }

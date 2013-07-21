@@ -24,6 +24,7 @@
 #include "mariadb.h"
 #include "query_priv.h"
 #include "connection_priv.h"
+#include "pool.h"
 
 mariadb_object_t *get_mariadb_api()
 {
@@ -33,13 +34,14 @@ mariadb_object_t *get_mariadb_api()
     mariadb = monkey->mem_alloc(sizeof(mariadb_object_t));
 
     /* Map API calls */
-    mariadb->init              = mariadb_conn_init;
-    mariadb->ssl_set           = mariadb_conn_ssl_set;
-    mariadb->connect           = mariadb_connect;
-    mariadb->disconnect        = mariadb_disconnect;
-    mariadb->escape            = mariadb_real_escape_string;
-    mariadb->query             = mariadb_query;
-    mariadb->abort             = mariadb_query_abort;
+    mariadb->init_conn     = mariadb_conn_init;
+    mariadb->pool_get_conn = mariadb_pool_get_conn;
+    mariadb->ssl_set       = mariadb_conn_ssl_set;
+    mariadb->connect       = mariadb_connect;
+    mariadb->disconnect    = mariadb_disconnect;
+    mariadb->escape        = mariadb_real_escape_string;
+    mariadb->query         = mariadb_query;
+    mariadb->abort         = mariadb_query_abort;
 
     return mariadb;
 }

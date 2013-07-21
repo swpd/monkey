@@ -42,10 +42,13 @@
 #include "connection.h"
 
 pthread_key_t mariadb_conn_list;
+pthread_key_t mariadb_conn_pool;
 
 typedef struct duda_api_mariadb {
-    mariadb_conn_t *(*init)(duda_request_t *, char *, char *, char *, char *,
-                            unsigned int, char *, unsigned long);
+    mariadb_conn_t *(*init_conn)(duda_request_t *, char *, char *, char *, char *,
+                                 unsigned int, char *, unsigned long);
+    mariadb_conn_t *(*pool_get_conn)(duda_request_t *, char *, char *, char *,
+                                     char *, unsigned int, char *, unsigned long);
     void (*ssl_set)(mariadb_conn_t *, const char *, const char *, const char*,
                     const char *, const char *);
     int (*connect)(mariadb_conn_t *, mariadb_connect_cb *);
@@ -61,6 +64,9 @@ mariadb_object_t *mariadb;
 static inline int mariadb_init_keys()
 {
     if (pthread_key_create(&mariadb_conn_list, NULL) != 0)
+        return MARIADB_ERR;
+
+    if (pthread_key_create(&mariadb_conn_pool, NULL) != 0)
         return MARIADB_ERR;
 
     return MARIADB_OK;

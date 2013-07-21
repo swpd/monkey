@@ -35,25 +35,27 @@ mariadb_conn_t *mariadb_conn_init(duda_request_t *dr, char *user, char *password
         return NULL;
     }
 
-    conn->dr                  = dr;
-    conn->config.user         = monkey->str_dup(user);
-    conn->config.password     = monkey->str_dup(password);
-    conn->config.ip           = monkey->str_dup(ip);
-    conn->config.db           = monkey->str_dup(db);
-    conn->config.port         = port;
-    conn->config.unix_socket  = monkey->str_dup(unix_socket);
-    conn->config.client_flag  = client_flag;
-    conn->config.ssl_key      = NULL;
-    conn->config.ssl_cert     = NULL;
-    conn->config.ssl_ca       = NULL;
-    conn->config.ssl_capath   = NULL;
-    conn->config.ssl_cipher   = NULL;
-    conn->fd                  = 0;
-    conn->state               = CONN_STATE_CLOSED;
-    conn->connect_cb          = NULL;
-    conn->disconnect_cb       = NULL;
-    conn->current_query       = NULL;
-    conn->disconnect_on_empty = 0;
+    conn->dr                   = dr;
+    conn->config.user          = monkey->str_dup(user);
+    conn->config.password      = monkey->str_dup(password);
+    conn->config.ip            = monkey->str_dup(ip);
+    conn->config.db            = monkey->str_dup(db);
+    conn->config.port          = port;
+    conn->config.unix_socket   = monkey->str_dup(unix_socket);
+    conn->config.client_flag   = client_flag;
+    conn->config.ssl_key       = NULL;
+    conn->config.ssl_cert      = NULL;
+    conn->config.ssl_ca        = NULL;
+    conn->config.ssl_capath    = NULL;
+    conn->config.ssl_cipher    = NULL;
+    conn->mysql_ret            = NULL;
+    conn->fd                   = 0;
+    conn->state                = CONN_STATE_CLOSED;
+    conn->connect_cb           = NULL;
+    conn->disconnect_cb        = NULL;
+    conn->current_query        = NULL;
+    conn->disconnect_on_finish = 0;
+    conn->is_pooled            = 0;
     mysql_init(&conn->mysql);
 
     mysql_options(&conn->mysql, MYSQL_OPT_NONBLOCK, 0);
