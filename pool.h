@@ -22,7 +22,7 @@
 #ifndef MARIADB_POOL_H
 #define MARIADB_POOL_H
 
-#define MARIADB_POOL_DEFAULT_SIZE 4
+#define MARIADB_POOL_DEFAULT_SIZE 2
 
 typedef struct mariadb_pool {
     int size;

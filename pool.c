@@ -59,7 +59,6 @@ static inline void __mariadb_pool_release_conn(mariadb_pool_t *pool, int size)
 
     for (i = 0; i < size; ++i) {
         conn = mk_list_entry_first(&pool->free_conns, mariadb_conn_t, _pool_head);
-        mk_list_del(&conn->_head);
         mk_list_del(&conn->_pool_head);
         mariadb_conn_free(conn);
         pool->size--;
