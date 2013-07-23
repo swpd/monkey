@@ -52,7 +52,8 @@ duda_package_t *duda_package_main(struct duda_api_objects *api)
 
     duda_package_init();
 
-    mariadb_init_keys();
+    global->init(&mariadb_conn_list, NULL);
+    global->init(&mariadb_conn_pool, NULL);
 
     dpkg          = monkey->mem_alloc(sizeof(duda_package_t));
     dpkg->name    = "MariaDB";

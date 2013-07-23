@@ -27,7 +27,7 @@
 #include "connection_priv.h"
 #include "pool.h"
 
-pthread_key_t mariadb_conn_pool;
+duda_global_t mariadb_conn_pool;
 
 static inline int  __mariadb_pool_spawn_conn(mariadb_pool_t *pool, int size)
 {
@@ -74,7 +74,7 @@ mariadb_conn_t *mariadb_pool_get_conn(duda_request_t *dr, char *user, char *pass
     mariadb_conn_t *conn;
     int ret;
 
-    pool = pthread_getspecific(mariadb_conn_pool);
+    pool = global->get(mariadb_conn_pool);
     if (!pool) {
         pool = monkey->mem_alloc(sizeof(mariadb_pool_t));
         if (!pool) {
@@ -84,7 +84,7 @@ mariadb_conn_t *mariadb_pool_get_conn(duda_request_t *dr, char *user, char *pass
         pool->free_size = 0;
         mk_list_init(&pool->free_conns);
         mk_list_init(&pool->busy_conns);
-        pthread_setspecific(mariadb_conn_pool, (void *) pool);
+        global->set(mariadb_conn_pool, (void *) pool);
 
         ret = __mariadb_pool_spawn_conn(pool, MARIADB_POOL_DEFAULT_SIZE);
         if (ret != MARIADB_OK) {
@@ -119,7 +119,7 @@ mariadb_conn_t *mariadb_pool_get_conn(duda_request_t *dr, char *user, char *pass
 
 void mariadb_pool_reclaim_conn(mariadb_conn_t *conn)
 {
-    mariadb_pool_t *pool = pthread_getspecific(mariadb_conn_pool);
+    mariadb_pool_t *pool = global->get(mariadb_conn_pool);
 
     FREE(conn->config.user);
     FREE(conn->config.password);

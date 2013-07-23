@@ -41,8 +41,8 @@
 #include "query.h"
 #include "connection.h"
 
-pthread_key_t mariadb_conn_list;
-pthread_key_t mariadb_conn_pool;
+duda_global_t mariadb_conn_list;
+duda_global_t mariadb_conn_pool;
 
 typedef struct duda_api_mariadb {
     mariadb_conn_t *(*init_conn)(duda_request_t *, char *, char *, char *, char *,
@@ -60,17 +60,6 @@ typedef struct duda_api_mariadb {
 } mariadb_object_t;
 
 mariadb_object_t *mariadb;
-
-static inline int mariadb_init_keys()
-{
-    if (pthread_key_create(&mariadb_conn_list, NULL) != 0)
-        return MARIADB_ERR;
-
-    if (pthread_key_create(&mariadb_conn_pool, NULL) != 0)
-        return MARIADB_ERR;
-
-    return MARIADB_OK;
-}
 
 int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb);
 

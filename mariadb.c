@@ -30,7 +30,7 @@ static inline mariadb_conn_t *mariadb_get_conn(int fd)
     struct mk_list *conn_list, *head;
     mariadb_conn_t *conn = NULL;
 
-    conn_list = pthread_getspecific(mariadb_conn_list);
+    conn_list = global->get(mariadb_conn_list);
     mk_list_foreach(head, conn_list) {
         conn = mk_list_entry(head, mariadb_conn_t, _head);
         if (conn->fd == fd) {
@@ -305,7 +305,7 @@ int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb)
                    mariadb_on_read, mariadb_on_write, mariadb_on_error,
                    mariadb_on_close, mariadb_on_timeout, NULL);
 
-        struct mk_list *conn_list = pthread_getspecific(mariadb_conn_list);
+        struct mk_list *conn_list = global->get(mariadb_conn_list);
         if (!conn_list) {
             conn_list = monkey->mem_alloc(sizeof(struct mk_list));
             if (!conn_list) {
@@ -317,7 +317,7 @@ int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb)
                 return MARIADB_ERR;
             }
             mk_list_init(conn_list);
-            pthread_setspecific(mariadb_conn_list, (void *) conn_list);
+            global->set(mariadb_conn_list, (void *) conn_list);
         }
         mk_list_add(&conn->_head, conn_list);
         /* handle pending queries on connected */
