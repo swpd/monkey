@@ -25,10 +25,12 @@
 #include "query_priv.h"
 #include "connection.h"
 #include "connection_priv.h"
+#include "pool.h"
 
-mariadb_conn_t *mariadb_conn_init(duda_request_t *dr, char *user, char *password,
-                                  char *ip, char *db, unsigned int port,
-                                  char *unix_socket, unsigned long client_flag)
+mariadb_conn_t *mariadb_conn_init(duda_request_t *dr, const char *user,
+                                  const char *password, const char *ip,
+                                  const char *db, unsigned int port,
+                                  const char *unix_socket, unsigned long client_flag)
 {
     mariadb_conn_t *conn = monkey->mem_alloc(sizeof(mariadb_conn_t));
     if (!conn) {
@@ -56,6 +58,7 @@ mariadb_conn_t *mariadb_conn_init(duda_request_t *dr, char *user, char *password
     conn->current_query        = NULL;
     conn->disconnect_on_finish = 0;
     conn->is_pooled            = 0;
+    conn->pool                 = NULL;
     mysql_init(&conn->mysql);
 
     mysql_options(&conn->mysql, MYSQL_OPT_NONBLOCK, 0);

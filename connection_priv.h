@@ -63,14 +63,16 @@ struct mariadb_conn {
     mariadb_query_t *current_query;
     int disconnect_on_finish;
     int is_pooled;
+    mariadb_pool_t *pool;
     struct mk_list queries;
     struct mk_list _head;
     struct mk_list _pool_head;
 };
 
-mariadb_conn_t *mariadb_conn_init(duda_request_t *dr, char *user, char *password,
-                                  char *ip, char *db, unsigned int port,
-                                  char *unix_socket, unsigned long client_flag);
+mariadb_conn_t *mariadb_conn_init(duda_request_t *dr, const char *user,
+                                  const char *password, const char *ip,
+                                  const char *db, unsigned int port,
+                                  const char *unix_socket, unsigned long client_flag);
 
 void mariadb_conn_ssl_set(mariadb_conn_t *conn, const char *key, const char *cert,
                           const char *ca, const char *capath, const char *cipher);

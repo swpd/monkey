@@ -34,9 +34,11 @@ mariadb_object_t *get_mariadb_api()
     mariadb = monkey->mem_alloc(sizeof(mariadb_object_t));
 
     /* Map API calls */
-    mariadb->init_conn     = mariadb_conn_init;
+    mariadb->create_conn   = mariadb_conn_init;
+    mariadb->create_pool   = mariadb_pool_create;
     mariadb->pool_get_conn = mariadb_pool_get_conn;
     mariadb->ssl_set       = mariadb_conn_ssl_set;
+    mariadb->pool_set_ssl  = mariadb_pool_set_ssl;
     mariadb->connect       = mariadb_connect;
     mariadb->disconnect    = mariadb_disconnect;
     mariadb->escape        = mariadb_real_escape_string;
@@ -54,6 +56,7 @@ duda_package_t *duda_package_main(struct duda_api_objects *api)
 
     global->init(&mariadb_conn_list, NULL);
     global->init(&mariadb_conn_pool, NULL);
+    mk_list_init(&mariadb_pool_config_list);
 
     dpkg          = monkey->mem_alloc(sizeof(duda_package_t));
     dpkg->name    = "MariaDB";
