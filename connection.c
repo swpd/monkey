@@ -21,16 +21,13 @@
 
 #include <mysql.h>
 #include "common.h"
-#include "query.h"
 #include "query_priv.h"
-#include "pool.h"
-#include "connection.h"
 #include "connection_priv.h"
 
-mariadb_conn_t *mariadb_conn_init(duda_request_t *dr, const char *user,
-                                  const char *password, const char *ip,
-                                  const char *db, unsigned int port,
-                                  const char *unix_socket, unsigned long client_flag)
+mariadb_conn_t *mariadb_conn_create(duda_request_t *dr, const char *user,
+                                    const char *password, const char *ip,
+                                    const char *db, unsigned int port,
+                                    const char *unix_socket, unsigned long client_flag)
 {
     mariadb_conn_t *conn = monkey->mem_alloc(sizeof(mariadb_conn_t));
     if (!conn) {

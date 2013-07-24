@@ -21,10 +21,9 @@
 
 #include <mysql.h>
 #include "mariadb.h"
-#include "pool.h"
 #include "query_priv.h"
 #include "connection_priv.h"
-#include "pool_priv.h"
+#include "pool.h"
 
 static inline mariadb_conn_t *mariadb_get_conn(int fd)
 {

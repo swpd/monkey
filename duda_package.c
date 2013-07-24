@@ -22,10 +22,9 @@
 #include <mysql.h>
 #include "duda_package.h"
 #include "mariadb.h"
-#include "pool.h"
 #include "query_priv.h"
 #include "connection_priv.h"
-#include "pool_priv.h"
+#include "pool.h"
 
 mariadb_object_t *get_mariadb_api()
 {
@@ -35,7 +34,7 @@ mariadb_object_t *get_mariadb_api()
     mariadb = monkey->mem_alloc(sizeof(mariadb_object_t));
 
     /* Map API calls */
-    mariadb->create_conn   = mariadb_conn_init;
+    mariadb->create_conn   = mariadb_conn_create;
     mariadb->create_pool   = mariadb_pool_create;
     mariadb->pool_get_conn = mariadb_pool_get_conn;
     mariadb->set_ssl       = mariadb_conn_ssl_set;

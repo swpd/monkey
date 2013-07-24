@@ -21,11 +21,9 @@
 
 #include <mysql.h>
 #include "common.h"
-#include "pool.h"
 #include "query.h"
-#include "connection.h"
 #include "connection_priv.h"
-#include "pool_priv.h"
+#include "pool.h"
 
 int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb);
 void mariadb_disconnect(mariadb_conn_t *conn, mariadb_disconnect_cb *cb);
@@ -37,9 +35,9 @@ static inline int  __mariadb_pool_spawn_conn(mariadb_pool_t *pool, int size)
     mariadb_conn_config_t config = pool->config->conn_config;
 
     for (i = 0; i < size; ++i) {
-        conn = mariadb_conn_init(NULL, config.user, config.password, config.ip,
-                                 config.db, config.port, config.unix_socket,
-                                 config.client_flag);
+        conn = mariadb_conn_create(NULL, config.user, config.password, config.ip,
+                                   config.db, config.port, config.unix_socket,
+                                   config.client_flag);
         if (!conn) {
             break;
         }
@@ -183,9 +181,9 @@ mariadb_conn_t *mariadb_pool_get_conn(duda_global_t *pool_key, duda_request_t *d
             }
         } else {
             conn_config = config->conn_config;
-            conn = mariadb_conn_init(dr, conn_config.user, conn_config.password,
-                                     conn_config.ip, conn_config.db, conn_config.port,
-                                     conn_config.unix_socket, conn_config.client_flag);
+            conn = mariadb_conn_create(dr, conn_config.user, conn_config.password,
+                                       conn_config.ip, conn_config.db, conn_config.port,
+                                       conn_config.unix_socket, conn_config.client_flag);
             if (!conn) {
                 return NULL;
             }

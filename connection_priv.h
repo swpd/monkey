@@ -22,6 +22,8 @@
 #ifndef MARIADB_CONNECTION_PRIV_H
 #define MARIADB_CONNECTION_PRIV_H
 
+#include "connection.h"
+
 typedef enum {
     CONN_STATE_NULL, CONN_STATE_CLOSED,
     CONN_STATE_CONNECTING, CONN_STATE_CONNECTED,
@@ -50,6 +52,8 @@ typedef struct mariadb_conn_config {
     char *ssl_cipher;
 } mariadb_conn_config_t;
 
+struct mariadb_pool;
+
 struct mariadb_conn {
     struct duda_request *dr;
     mariadb_conn_config_t config;
@@ -63,16 +67,16 @@ struct mariadb_conn {
     mariadb_query_t *current_query;
     int disconnect_on_finish;
     int is_pooled;
-    mariadb_pool_t *pool;
+    struct mariadb_pool *pool;
     struct mk_list queries;
     struct mk_list _head;
     struct mk_list _pool_head;
 };
 
-mariadb_conn_t *mariadb_conn_init(duda_request_t *dr, const char *user,
-                                  const char *password, const char *ip,
-                                  const char *db, unsigned int port,
-                                  const char *unix_socket, unsigned long client_flag);
+mariadb_conn_t *mariadb_conn_create(duda_request_t *dr, const char *user,
+                                    const char *password, const char *ip,
+                                    const char *db, unsigned int port,
+                                    const char *unix_socket, unsigned long client_flag);
 
 void mariadb_conn_ssl_set(mariadb_conn_t *conn, const char *key, const char *cert,
                           const char *ca, const char *capath, const char *cipher);

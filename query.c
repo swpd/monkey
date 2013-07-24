@@ -21,7 +21,6 @@
 
 #include <mysql.h>
 #include "common.h"
-#include "query.h"
 #include "query_priv.h"
 
 mariadb_query_t *mariadb_query_init(const char *query_str,

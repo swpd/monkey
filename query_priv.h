@@ -22,6 +22,8 @@
 #ifndef MARIADB_QUERY_PRIV_H
 #define MARIADB_QUERY_PRIV_H
 
+#include "query.h"
+
 typedef enum {
     QUERY_ABORT_NO, QUERY_ABORT_YES
 } mariadb_query_abort_t;
