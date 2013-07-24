@@ -22,11 +22,11 @@
 #ifndef MARIADB_POOL_PRIV_H
 #define MARIADB_POOL_PRIV_H
 
-#define MARIADB_POOL_DEFAULT_SIZE 2
+#define MARIADB_POOL_DEFAULT_SIZE 1
 #define MARIADB_POOL_DEFAULT_MIN_SIZE 2
 #define MARIADB_POOL_DEFAULT_MAX_SIZE 8
 
-struct mariadb_pool_config {
+typedef struct mariadb_pool_config {
     mariadb_conn_config_t conn_config;
     duda_global_t *pool_key;
 
@@ -35,28 +35,28 @@ struct mariadb_pool_config {
     int max_size;
 
     struct mk_list _head;
-};
+} mariadb_pool_config_t;
 
 struct mk_list mariadb_pool_config_list;
 
-typedef struct mariadb_pool {
+struct mariadb_pool {
     int size;
     int free_size;
     mariadb_pool_config_t *config;
 
     struct mk_list busy_conns;
     struct mk_list free_conns;
-} mariadb_pool_t;
+};
 
 int mariadb_pool_create(duda_global_t *pool_key, int min_size, int max_size,
                         const char *user, const char *password, const char *ip,
                         const char *db, unsigned int port, const char *unix_socket,
                         unsigned long client_flag);
 
-void mariadb_pool_set_ssl(duda_global_t *pool_key, const char *key, const char *cert,
-                          const char *ca, const char *capath, const char *cipher);
+int mariadb_pool_set_ssl(duda_global_t *pool_key, const char *key, const char *cert,
+                         const char *ca, const char *capath, const char *cipher);
 
-mariadb_conn_t *mariadb_pool_get_conn(duda_global_t pool_key, duda_request_t *dr);
+mariadb_conn_t *mariadb_pool_get_conn(duda_global_t *pool_key, duda_request_t *dr);
 
 void mariadb_pool_reclaim_conn(mariadb_conn_t *conn);
 

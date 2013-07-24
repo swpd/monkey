@@ -23,9 +23,9 @@
 #include "common.h"
 #include "query.h"
 #include "query_priv.h"
+#include "pool.h"
 #include "connection.h"
 #include "connection_priv.h"
-#include "pool.h"
 
 mariadb_conn_t *mariadb_conn_init(duda_request_t *dr, const char *user,
                                   const char *password, const char *ip,

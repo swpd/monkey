@@ -21,9 +21,10 @@
 
 #include <mysql.h>
 #include "mariadb.h"
+#include "pool.h"
 #include "query_priv.h"
 #include "connection_priv.h"
-#include "pool.h"
+#include "pool_priv.h"
 
 static inline mariadb_conn_t *mariadb_get_conn(int fd)
 {
@@ -91,7 +92,11 @@ static void __mariadb_handle_query(mariadb_conn_t *conn)
     /* all queries have been handled */
     event->mode(conn->fd, DUDA_EVENT_SLEEP, DUDA_EVENT_LEVEL_TRIGGERED);
     if (conn->disconnect_on_finish) {
-        event->delete(conn->fd);
+        if (conn->is_pooled) {
+            event->mode(conn->fd, DUDA_EVENT_SLEEP, DUDA_EVENT_LEVEL_TRIGGERED);
+        } else {
+            event->delete(conn->fd);
+        }
         __mariadb_handle_disconnect(conn, MARIADB_OK);
     }
 }
@@ -213,15 +218,15 @@ static void __mariadb_handle_next_result(mariadb_conn_t *conn)
 
 static void __mariadb_handle_disconnect(mariadb_conn_t *conn, int status)
 {
-    mk_list_del(&conn->_head);
-    mysql_close(&conn->mysql);
     if (conn->state >= CONN_STATE_CONNECTED && conn->disconnect_cb) {
         conn->disconnect_cb(conn, status, conn->dr);
     }
-    conn->state = CONN_STATE_CLOSED;
     if (conn->is_pooled) {
         mariadb_pool_reclaim_conn(conn);
     } else {
+        conn->state = CONN_STATE_CLOSED;
+        mk_list_del(&conn->_head);
+        mysql_close(&conn->mysql);
         mariadb_conn_free(conn);
     }
 }
@@ -270,11 +275,7 @@ int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb)
             if (conn->connect_cb) {
                 conn->connect_cb(conn, MARIADB_ERR, conn->dr);
             }
-            if (conn->is_pooled) {
-                mariadb_pool_reclaim_conn(conn);
-            } else {
-                mariadb_conn_free(conn);
-            }
+            mariadb_conn_free(conn);
             return MARIADB_ERR;
         }
         conn->fd = mysql_get_socket(&conn->mysql);
@@ -288,11 +289,7 @@ int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb)
                 if (conn->connect_cb) {
                     conn->connect_cb(conn, MARIADB_ERR, conn->dr);
                 }
-                if (conn->is_pooled) {
-                    mariadb_pool_reclaim_conn(conn);
-                } else {
-                    mariadb_conn_free(conn);
-                }
+                mariadb_conn_free(conn);
                 return MARIADB_ERR;
             }
             conn->state = CONN_STATE_CONNECTED;
@@ -309,11 +306,7 @@ int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb)
         if (!conn_list) {
             conn_list = monkey->mem_alloc(sizeof(struct mk_list));
             if (!conn_list) {
-                if (conn->is_pooled) {
-                    mariadb_pool_reclaim_conn(conn);
-                } else {
-                    mariadb_conn_free(conn);
-                }
+                mariadb_conn_free(conn);
                 return MARIADB_ERR;
             }
             mk_list_init(conn_list);
@@ -339,7 +332,11 @@ void mariadb_disconnect(mariadb_conn_t *conn, mariadb_disconnect_cb *cb)
         conn->disconnect_on_finish = 1;
         return;
     }
-    event->delete(conn->fd);
+    if (conn->is_pooled) {
+        event->mode(conn->fd, DUDA_EVENT_SLEEP, DUDA_EVENT_LEVEL_TRIGGERED);
+    } else {
+        event->delete(conn->fd);
+    }
     __mariadb_handle_disconnect(conn, MARIADB_OK);
     return;
 }

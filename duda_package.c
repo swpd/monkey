@@ -22,9 +22,10 @@
 #include <mysql.h>
 #include "duda_package.h"
 #include "mariadb.h"
+#include "pool.h"
 #include "query_priv.h"
 #include "connection_priv.h"
-#include "pool.h"
+#include "pool_priv.h"
 
 mariadb_object_t *get_mariadb_api()
 {
@@ -37,7 +38,7 @@ mariadb_object_t *get_mariadb_api()
     mariadb->create_conn   = mariadb_conn_init;
     mariadb->create_pool   = mariadb_pool_create;
     mariadb->pool_get_conn = mariadb_pool_get_conn;
-    mariadb->ssl_set       = mariadb_conn_ssl_set;
+    mariadb->set_ssl       = mariadb_conn_ssl_set;
     mariadb->pool_set_ssl  = mariadb_pool_set_ssl;
     mariadb->connect       = mariadb_connect;
     mariadb->disconnect    = mariadb_disconnect;
@@ -55,7 +56,6 @@ duda_package_t *duda_package_main(struct duda_api_objects *api)
     duda_package_init();
 
     global->init(&mariadb_conn_list, NULL);
-    global->init(&mariadb_conn_pool, NULL);
     mk_list_init(&mariadb_pool_config_list);
 
     dpkg          = monkey->mem_alloc(sizeof(duda_package_t));

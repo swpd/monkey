@@ -21,12 +21,14 @@
 
 #include <mysql.h>
 #include "common.h"
+#include "pool.h"
 #include "query.h"
-#include "query_priv.h"
 #include "connection.h"
 #include "connection_priv.h"
-#include "pool.h"
 #include "pool_priv.h"
+
+int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb);
+void mariadb_disconnect(mariadb_conn_t *conn, mariadb_disconnect_cb *cb);
 
 static inline int  __mariadb_pool_spawn_conn(mariadb_pool_t *pool, int size)
 {
@@ -76,7 +78,7 @@ static inline void __mariadb_pool_release_conn(mariadb_pool_t *pool, int size)
     }
 }
 
-static inline mariadb_pool_t *__mariadb_pool_get_config(duda_global_t *pool_key)
+static inline mariadb_pool_config_t *__mariadb_pool_get_config(duda_global_t *pool_key)
 {
     struct mk_list *head;
     mariadb_pool_config_t *config = NULL;
@@ -134,11 +136,11 @@ int mariadb_pool_set_ssl(duda_global_t *pool_key, const char *key, const char *c
         return MARIADB_ERR;
     }
 
-    config->conn_config.ssl_key    = key;
-    config->conn_config.ssl_cert   = cert;
-    config->conn_config.ssl_ca     = ca;
-    config->conn_config.ssl_capath = capath;
-    config->conn_config.ssl_cipher = cipher;
+    config->conn_config.ssl_key    = monkey->str_dup(key);
+    config->conn_config.ssl_cert   = monkey->str_dup(cert);
+    config->conn_config.ssl_ca     = monkey->str_dup(ca);
+    config->conn_config.ssl_capath = monkey->str_dup(capath);
+    config->conn_config.ssl_cipher = monkey->str_dup(cipher);
     config->use_ssl                = 1;
 
     return MARIADB_OK;
@@ -149,6 +151,7 @@ mariadb_conn_t *mariadb_pool_get_conn(duda_global_t *pool_key, duda_request_t *d
     mariadb_pool_t *pool;
     mariadb_pool_config_t *config;
     mariadb_conn_t *conn;
+    mariadb_conn_config_t conn_config;
     int ret;
 
     pool = global->get(*pool_key);
@@ -164,17 +167,13 @@ mariadb_conn_t *mariadb_pool_get_conn(duda_global_t *pool_key, duda_request_t *d
         mk_list_init(&pool->busy_conns);
         global->set(*pool_key, (void *) pool);
 
-        ret = __mariadb_pool_spawn_conn(pool, MARIADB_POOL_DEFAULT_SIZE);
-        if (ret != MARIADB_OK) {
+        config = __mariadb_pool_get_config(pool_key);
+        if (!config) {
             return NULL;
         }
+        pool->config = config;
     }
 
-    mariadb_pool_config_t *config = __mariadb_pool_get_config(pool_key);
-    if (!config) {
-        return NULL;
-    }
-    pool->config = config;
 
     if (mk_list_is_empty(&pool->free_conns) == 0) {
         if (pool->size < config->max_size) {
@@ -183,9 +182,10 @@ mariadb_conn_t *mariadb_pool_get_conn(duda_global_t *pool_key, duda_request_t *d
                 return NULL;
             }
         } else {
-            conn = mariadb_conn_init(dr, config.user, config.password, config.ip,
-                                     config.db, config.port, config.unix_socket,
-                                     config.client_flag);
+            conn_config = config->conn_config;
+            conn = mariadb_conn_init(dr, conn_config.user, conn_config.password,
+                                     conn_config.ip, conn_config.db, conn_config.port,
+                                     conn_config.unix_socket, conn_config.client_flag);
             if (!conn) {
                 return NULL;
             }
@@ -213,6 +213,8 @@ void mariadb_pool_reclaim_conn(mariadb_conn_t *conn)
     mariadb_pool_t *pool = conn->pool;
 
     conn->dr                   = NULL;
+    conn->connect_cb           = NULL;
+    conn->disconnect_cb        = NULL;
     conn->disconnect_on_finish = 0;
 
     mk_list_del(&conn->_pool_head);

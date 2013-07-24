@@ -47,12 +47,13 @@ typedef struct duda_api_mariadb {
     mariadb_conn_t *(*create_conn)(duda_request_t *, const char *, const char *,
                                  const char *, const char *, unsigned int,
                                  const char *, unsigned long);
-    int *(*create_pool)(duda_global_t *, const char *, const char *, const char *,
-                        const char *, unsigned int, const char *, unsigned long);
+    int (*create_pool)(duda_global_t *, int , int, const char *, const char *,
+                        const char *, const char *, unsigned int, const char *,
+                        unsigned long);
     void (*set_ssl)(mariadb_conn_t *, const char *, const char *, const char*,
                     const char *, const char *);
-    void (*pool_set_ssl)(duda_global_t *, const char *, const char *, const char*,
-                         const char *, const char *);
+    int (*pool_set_ssl)(duda_global_t *, const char *, const char *, const char*,
+                        const char *, const char *);
     mariadb_conn_t *(*pool_get_conn)(duda_global_t *, duda_request_t *);
     int (*connect)(mariadb_conn_t *, mariadb_connect_cb *);
     void (*disconnect)(mariadb_conn_t *, mariadb_disconnect_cb *);
