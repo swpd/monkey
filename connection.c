@@ -64,7 +64,7 @@ mariadb_conn_t *mariadb_conn_create(duda_request_t *dr, const char *user,
     return conn;
 }
 
-/* This function should be called before mariadb_connect */
+/* This function should be called before mariadb->connect */
 void mariadb_conn_ssl_set(mariadb_conn_t *conn, const char *key, const char *cert,
                           const char *ca, const char *capath, const char *cipher)
 {
@@ -80,19 +80,6 @@ void mariadb_conn_ssl_set(mariadb_conn_t *conn, const char *key, const char *cer
     mysql_ssl_set(&conn->mysql, conn->config.ssl_key, conn->config.ssl_cert,
                   conn->config.ssl_ca, conn->config.ssl_capath,
                   conn->config.ssl_cipher);
-}
-
-int mariadb_conn_add_query(mariadb_conn_t *conn, const char *query_str,
-                           mariadb_query_result_cb *result_cb,
-                           mariadb_query_row_cb *row_cb, void *row_cb_privdata,
-                           mariadb_query_end_cb *end_cb)
-{
-    mariadb_query_t *query = mariadb_query_init(query_str, result_cb, row_cb,
-                                                row_cb_privdata, end_cb);
-    if (!query)
-        return MARIADB_ERR;
-    mk_list_add(&query->_head, &conn->queries);
-    return MARIADB_OK;
 }
 
 void mariadb_conn_free(mariadb_conn_t *conn)

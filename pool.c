@@ -23,10 +23,8 @@
 #include "common.h"
 #include "query.h"
 #include "connection_priv.h"
+#include "async.h"
 #include "pool.h"
-
-int mariadb_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb);
-void mariadb_disconnect(mariadb_conn_t *conn, mariadb_disconnect_cb *cb);
 
 static inline int  __mariadb_pool_spawn_conn(mariadb_pool_t *pool, int size)
 {
@@ -42,7 +40,7 @@ static inline int  __mariadb_pool_spawn_conn(mariadb_pool_t *pool, int size)
             break;
         }
 
-        ret = mariadb_connect(conn, NULL);
+        ret = mariadb_async_handle_connect(conn, NULL);
         if (ret != MARIADB_OK) {
             break;
         }
@@ -70,7 +68,7 @@ static inline void __mariadb_pool_release_conn(mariadb_pool_t *pool, int size)
         conn = mk_list_entry_first(&pool->free_conns, mariadb_conn_t, _pool_head);
         mk_list_del(&conn->_pool_head);
         conn->is_pooled = 0;
-        mariadb_disconnect(conn, NULL);
+        mariadb_async_handle_release(conn, MARIADB_OK);
         pool->size--;
         pool->free_size--;
     }
@@ -188,7 +186,7 @@ mariadb_conn_t *mariadb_pool_get_conn(duda_global_t *pool_key, duda_request_t *d
                 return NULL;
             }
 
-            ret = mariadb_connect(conn, NULL);
+            ret = mariadb_async_handle_connect(conn, NULL);
             if (ret != MARIADB_OK) {
                 return NULL;
             }

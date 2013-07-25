@@ -25,6 +25,7 @@
 #include "query_priv.h"
 #include "connection_priv.h"
 #include "pool.h"
+#include "async.h"
 
 mariadb_object_t *get_mariadb_api()
 {
@@ -39,10 +40,10 @@ mariadb_object_t *get_mariadb_api()
     mariadb->pool_get_conn = mariadb_pool_get_conn;
     mariadb->set_ssl       = mariadb_conn_ssl_set;
     mariadb->pool_set_ssl  = mariadb_pool_set_ssl;
-    mariadb->connect       = mariadb_connect;
-    mariadb->disconnect    = mariadb_disconnect;
+    mariadb->connect       = mariadb_async_handle_connect;
+    mariadb->disconnect    = mariadb_async_handle_disconnect;
     mariadb->escape        = mariadb_real_escape_string;
-    mariadb->query         = mariadb_query;
+    mariadb->query         = mariadb_async_handle_add_query;
     mariadb->abort         = mariadb_query_abort;
 
     return mariadb;
