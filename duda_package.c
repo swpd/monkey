@@ -19,6 +19,15 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+/*
+ * @OBJ_NAME: mariadb
+ * @OBJ_MENU: MariaDB
+ * @OBJ_DESC: The MariaDB package exposes a set of methods to communicate with
+ * the MariaDB relational database.
+ * @PKG_HEADER: #include "packages/mariadb/mariadb.h"
+ * @PKG_INIT: duda_load_package(mariadb, "mariadb");
+ */
+
 #include <mysql.h>
 #include "duda_package.h"
 #include "mariadb.h"
@@ -38,7 +47,7 @@ mariadb_object_t *get_mariadb_api()
     mariadb->create_conn   = mariadb_conn_create;
     mariadb->create_pool   = mariadb_pool_create;
     mariadb->pool_get_conn = mariadb_pool_get_conn;
-    mariadb->set_ssl       = mariadb_conn_ssl_set;
+    mariadb->set_ssl       = mariadb_conn_set_ssl;
     mariadb->pool_set_ssl  = mariadb_pool_set_ssl;
     mariadb->connect       = mariadb_async_handle_connect;
     mariadb->disconnect    = mariadb_async_handle_disconnect;

@@ -41,6 +41,17 @@ static inline mariadb_conn_t *mariadb_get_conn(int fd)
     return conn;
 }
 
+/*
+ * @METHOD_NAME: escape
+ * @METHOD_DESC: Escape special characters in a string for use in an SQL statement.
+ * @METHOD_PROTO: unsigned long escape(mariadb_conn_t *conn, char *to, const char *from, unsigned long length)
+ * @METHOD_PARAM: conn The MariaDB connection handle, it must be a valid, open connection.
+ * @METHOD_PARAM: to The escaped string, the buffer that pointed to by `to' should be at least `length' * 2 + 1 bytes long.
+ * @METHOD_PARAM: from The string that is to be escaped.
+ * @METHOD_PARAM: length The length of the string pointed to by `from'.
+ * @METHOD_RETURN: The length of the string placed into `to', not including the terminating null character.
+ */
+
 unsigned long mariadb_real_escape_string(mariadb_conn_t *conn, char *to,
                                          const char *from, unsigned long length)
 {

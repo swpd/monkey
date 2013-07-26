@@ -24,8 +24,23 @@
 #include "query_priv.h"
 #include "connection_priv.h"
 
+/*
+ * @METHOD_NAME: create_conn
+ * @METHOD_DESC: Create a new MariaDB connection handle.
+ * @METHOD_PROTO: mariadb_conn_t *create_conn(duda_request_t *dr, const char *user, const char *password, const char *host, const char *db, unsigned int port, const char *unix_socket, unsigned long client_flag)
+ * @METHOD_PARAM: dr The request context information hold by a duda_request_t type.
+ * @METHOD_PARAM: user The user's MYSQL login ID. If `user' is NULL or the empty string, the current user is assumed.
+ * @METHOD_PARAM: password The password of `user'.
+ * @METHOD_PARAM: host The host name or IP address of the MariaDB server. If `host' is NULL or the string is "localhost", a connection to the local host is assumed.
+ * @METHOD_PARAM: db The database to use for this connection.
+ * @METHOD_PARAM: port The port number to connect to. If `port' is 0, the default port number 3306 is assumed.
+ * @METHOD_PARAM: unix_socket The path name to a unix domain socket to connect to. If `unix_socket' is NULL, the default path is assumed.(Depending on your Linux distribution)
+ * @METHOD_PARAM: client_flag The combination of flags to enable some features, such as mutli-statements query. For full information and available flags please refer to <a href="http://dev.mysql.com/doc/refman/5.7/en/mysql-real-connect.html">this</a>.
+ * @METHOD_RETURN: A newly initialized MariaDB connection handle on success, or NULL on failure.
+ */
+
 mariadb_conn_t *mariadb_conn_create(duda_request_t *dr, const char *user,
-                                    const char *password, const char *ip,
+                                    const char *password, const char *host,
                                     const char *db, unsigned int port,
                                     const char *unix_socket, unsigned long client_flag)
 {
@@ -37,7 +52,7 @@ mariadb_conn_t *mariadb_conn_create(duda_request_t *dr, const char *user,
     conn->dr                   = dr;
     conn->config.user          = monkey->str_dup(user);
     conn->config.password      = monkey->str_dup(password);
-    conn->config.ip            = monkey->str_dup(ip);
+    conn->config.host          = monkey->str_dup(host);
     conn->config.db            = monkey->str_dup(db);
     conn->config.port          = port;
     conn->config.unix_socket   = monkey->str_dup(unix_socket);
@@ -64,8 +79,20 @@ mariadb_conn_t *mariadb_conn_create(duda_request_t *dr, const char *user,
     return conn;
 }
 
-/* This function should be called before mariadb->connect */
-void mariadb_conn_ssl_set(mariadb_conn_t *conn, const char *key, const char *cert,
+/*
+ * @METHOD_NAME: set_ssl
+ * @METHOD_DESC: Establish a MariaDB secure connection using SSL. It shall be called after `mariadb->create_conn()' and before `mariadb->connect()'.
+ * @METHOD_PROTO: void set_ssl(mariadb_conn_t *conn, const char *key, const char *cert, const char *ca, const char *capath, const char *cipher)
+ * @METHOD_PARAM: conn The MariaDB connection handle.
+ * @METHOD_PARAM: key The path name to the key file.
+ * @METHOD_PARAM: cert The path name to the certificate file.
+ * @METHOD_PARAM: ca The path name to the certificate authority file.
+ * @METHOD_PARAM: capath The path name to a directory that contains trusted SSL CA certificates in PEM format.
+ * @METHOD_PARAM: cipher A list of permissible ciphers to use for SSL encryption. If `cipher' is NULL, the default cipher list is assumed.
+ * @METHOD_RETURN: None.
+ */
+
+void mariadb_conn_set_ssl(mariadb_conn_t *conn, const char *key, const char *cert,
                           const char *ca, const char *capath, const char *cipher)
 {
     conn->config.ssl_key    = monkey->str_dup(key);
@@ -86,7 +113,7 @@ void mariadb_conn_free(mariadb_conn_t *conn)
 {
     FREE(conn->config.user);
     FREE(conn->config.password);
-    FREE(conn->config.ip);
+    FREE(conn->config.host);
     FREE(conn->config.db);
     FREE(conn->config.unix_socket);
     FREE(conn->config.ssl_key);

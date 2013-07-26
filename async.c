@@ -25,6 +25,15 @@
 #include "pool.h"
 #include "async.h"
 
+/*
+ * @METHOD_NAME: connect
+ * @METHOD_DESC: Attempts to establish a connection using a MariaDB connection handle created by `mairadb->create_conn()'.
+ * @METHOD_PROTO: int connect(mariadb_conn_t *conn, mariadb_connect_cb *cb)
+ * @METHOD_PARAM: conn The MariaDB connection handle, it must be a newly allocated one.
+ * @METHOD_PARAM: cb The callback function that will take actions when a connection success or fail to establish.
+ * @METHOD_RETURN: MAIRADB_OK on success, or MARIADB_ERR on failure.
+ */
+
 int mariadb_async_handle_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb)
 {
     int status;
@@ -35,7 +44,7 @@ int mariadb_async_handle_connect(mariadb_conn_t *conn, mariadb_connect_cb *cb)
     /* whether the connection has already been established */
     if (conn->state == CONN_STATE_CLOSED) { 
         status = mysql_real_connect_start(&conn->mysql_ret, &conn->mysql,
-                                          conn->config.ip, conn->config.user,
+                                          conn->config.host, conn->config.user,
                                           conn->config.password, conn->config.db,
                                           conn->config.port,
                                           conn->config.unix_socket,
@@ -255,6 +264,15 @@ void mariadb_async_handle_next_result(mariadb_conn_t *conn)
     conn->state = CONN_STATE_CONNECTED;
 }
 
+/*
+ * @METHOD_NAME: disconnect
+ * @METHOD_DESC: Disconnect a previous opened connection and release all the resource with it. It will ensure that all previous enqueued queries of that connection are processed before it is disconnected.
+ * @METHOD_PROTO: void disconnect(mariadb_conn_t *conn, mariadb_disconnect_cb *cb)
+ * @METHOD_PARAM: conn The MariaDB connection handle, it must be a valid, open connection.
+ * @METHOD_PARAM: cb The callback function that will take actions when a connection is disconnected.
+ * @METHOD_RETURN: None.
+ */
+
 void mariadb_async_handle_disconnect(mariadb_conn_t *conn, mariadb_disconnect_cb *cb)
 {
     if (!conn->disconnect_cb) {
@@ -287,6 +305,19 @@ void mariadb_async_handle_release(mariadb_conn_t* conn, int status)
         mariadb_conn_free(conn);
     }
 }
+
+/*
+ * @METHOD_NAME: query
+ * @METHOD_DESC: Enqueue a new query to a MariaDB connection.
+ * @METHOD_PROTO: int query(mariadb_conn_t *conn, const char *query_str, mariadb_query_result_cb *result_cb, mariadb_query_row_cb *row_cb, void *row_cb_privdata, mariadb_query_end_cb *end_cb)
+ * @METHOD_PARAM: conn The MariaDB connection handle.
+ * @METHOD_PARAM: query_str The SQL statement string of this query.
+ * @METHOD_PARAM: result_cb The callback function that will take actions when the result set of this query is available.
+ * @METHOD_PARAM: row_cb The callback function that will take actions when every row of the result set is fetched.
+ * @METHOD_PARAM: row_cb_privdata: The user defined private data that will be passed to `row_cb'.
+ * @METHOD_PARAM: end_cb The callback function that will take actions after all the row in the result set are fetched.
+ * @METHOD_RETURN: MAIRADB_OK on success, or MARIADB_ERR on failure.
+ */
 
 int mariadb_async_handle_add_query(mariadb_conn_t *conn, const char *query_str,
                                    mariadb_query_result_cb *result_cb,

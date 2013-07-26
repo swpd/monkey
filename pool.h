@@ -49,7 +49,7 @@ typedef struct mariadb_pool {
 } mariadb_pool_t;
 
 int mariadb_pool_create(duda_global_t *pool_key, int min_size, int max_size,
-                        const char *user, const char *password, const char *ip,
+                        const char *user, const char *password, const char *host,
                         const char *db, unsigned int port, const char *unix_socket,
                         unsigned long client_flag);
 

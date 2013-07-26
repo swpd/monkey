@@ -38,7 +38,7 @@ typedef enum {
 typedef struct mariadb_conn_config {
     char *user;
     char *password;
-    char *ip;
+    char *host;
     char *db;
     unsigned int port;
     char *unix_socket;
@@ -74,11 +74,11 @@ struct mariadb_conn {
 };
 
 mariadb_conn_t *mariadb_conn_create(duda_request_t *dr, const char *user,
-                                    const char *password, const char *ip,
+                                    const char *password, const char *host,
                                     const char *db, unsigned int port,
                                     const char *unix_socket, unsigned long client_flag);
 
-void mariadb_conn_ssl_set(mariadb_conn_t *conn, const char *key, const char *cert,
+void mariadb_conn_set_ssl(mariadb_conn_t *conn, const char *key, const char *cert,
                           const char *ca, const char *capath, const char *cipher);
 
 void mariadb_conn_free(mariadb_conn_t *conn);

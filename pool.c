@@ -33,11 +33,16 @@ static inline int  __mariadb_pool_spawn_conn(mariadb_pool_t *pool, int size)
     mariadb_conn_config_t config = pool->config->conn_config;
 
     for (i = 0; i < size; ++i) {
-        conn = mariadb_conn_create(NULL, config.user, config.password, config.ip,
+        conn = mariadb_conn_create(NULL, config.user, config.password, config.host,
                                    config.db, config.port, config.unix_socket,
                                    config.client_flag);
         if (!conn) {
             break;
+        }
+
+        if (pool->config->use_ssl) {
+            mysql_ssl_set(&conn->mysql, config.ssl_key, config.ssl_cert,
+                          config.ssl_ca, config.ssl_capath, config.ssl_cipher);
         }
 
         ret = mariadb_async_handle_connect(conn, NULL);
@@ -89,8 +94,25 @@ static inline mariadb_pool_config_t *__mariadb_pool_get_config(duda_global_t *po
     return config;
 }
 
+/*
+ * @METHOD_NAME: create_pool
+ * @METHOD_DESC: Create a connection pool per thread for connection sharing. It must be called within the function `duda_main()' of a Duda web service.
+ * @METHOD_PROTO: int create_pool(duda_global_t *pool_key, int min_size, int max_size, const char *user, const char *password, const char *host, const char *db, unsigned int port, const char *unix_socket, unsigned long client_flag)
+ * @METHOD_PARAM: pool_key The pointer that refers to the global key definition of a pool.
+ * @METHOD_PARAM: min_size The minimum number of connections in the pool.
+ * @METHOD_PARAM: max_size The maximum number of connections in the pool.
+ * @METHOD_PARAM: user The user's MYSQL login ID. If `user' is NULL or the empty string, the current user is assumed.
+ * @METHOD_PARAM: password The password of `user'.
+ * @METHOD_PARAM: host The host name or IP address of the MariaDB server. If `host' is NULL or the string is "localhost", a connection to the local host is assumed.
+ * @METHOD_PARAM: db The database to use for this connection.
+ * @METHOD_PARAM: port The port number to connect to. If `port' is 0, the default port number 3306 is assumed.
+ * @METHOD_PARAM: unix_socket The path name to a unix domain socket to connect to. If `unix_socket' is NULL, the default path is assumed.(Depending on your Linux distribution)
+ * @METHOD_PARAM: client_flag The combination of flags to enable some features, such as mutli-statements query. For full information and available flags please refer to <a href="http://dev.mysql.com/doc/refman/5.7/en/mysql-real-connect.html">this</a>.
+ * @METHOD_RETURN: MAIRADB_OK on success, or MARIADB_ERR on failure.
+ */
+
 int mariadb_pool_create(duda_global_t *pool_key, int min_size, int max_size,
-                        const char *user, const char *password, const char *ip,
+                        const char *user, const char *password, const char *host,
                         const char *db, unsigned int port, const char *unix_socket,
                         unsigned long client_flag)
 {
@@ -102,7 +124,7 @@ int mariadb_pool_create(duda_global_t *pool_key, int min_size, int max_size,
     config->pool_key                = pool_key;
     config->conn_config.user        = monkey->str_dup(user);
     config->conn_config.password    = monkey->str_dup(password);
-    config->conn_config.ip          = monkey->str_dup(ip);
+    config->conn_config.host        = monkey->str_dup(host);
     config->conn_config.db          = monkey->str_dup(db);
     config->conn_config.port        = port;
     config->conn_config.unix_socket = monkey->str_dup(unix_socket);
@@ -124,6 +146,19 @@ int mariadb_pool_create(duda_global_t *pool_key, int min_size, int max_size,
     return MARIADB_OK;
 }
 
+/*
+ * @METHOD_NAME: pool_set_ssl
+ * @METHOD_DESC: Create a pool of MariaDB secure connections per thread using SSL. It must be called within the function `duda_main()' of a Duda web service and shall be called after `mariadb->create_pool()'. 
+ * @METHOD_PROTO: int pool_set_ssl(duda_global_t *pool_key, const char *key, const char *cert, const char *ca, const char *capath, const char *cipher)
+ * @METHOD_PARAM: pool_key The pointer that refers to the global key definition of a pool.
+ * @METHOD_PARAM: key The path name to the key file.
+ * @METHOD_PARAM: cert The path name to the certificate file.
+ * @METHOD_PARAM: ca The path name to the certificate authority file.
+ * @METHOD_PARAM: capath The path name to a directory that contains trusted SSL CA certificates in PEM format.
+ * @METHOD_PARAM: cipher A list of permissible ciphers to use for SSL encryption. If `cipher' is NULL, the default cipher list is assumed.
+ * @METHOD_RETURN: MAIRADB_OK on success, or MARIADB_ERR on failure.
+ */
+
 int mariadb_pool_set_ssl(duda_global_t *pool_key, const char *key, const char *cert,
                          const char *ca, const char *capath, const char *cipher)
 {
@@ -141,6 +176,16 @@ int mariadb_pool_set_ssl(duda_global_t *pool_key, const char *key, const char *c
 
     return MARIADB_OK;
 }
+
+/*
+ * @METHOD_NAME: pool_get_conn
+ * @METHOD_DESC: Get a MariaDB connection from a connection pool. If all the connections in a pool are currently used, the pool will spawn more connections as long as the pool size don't exceed the maximum.
+ * @METHOD_PROTO: mariadb_conn_t *pool_get_conn(duda_global_t *pool_key, duda_request_t *dr, mariadb_connect_cb *cb)
+ * @METHOD_PARAM: pool_key The pointer that refers to the global key definition of a pool.
+ * @METHOD_PARAM: dr The request context information hold by a duda_request_t type.
+ * @METHOD_PARAM: cb The callback function that will take actions when a connection success or fail to establish.
+ * @METHOD_RETURN: A MariaDB connection on success, or NULL on failure.
+ */
 
 mariadb_conn_t *mariadb_pool_get_conn(duda_global_t *pool_key, duda_request_t *dr,
                                       mariadb_connect_cb *cb)
@@ -181,7 +226,7 @@ mariadb_conn_t *mariadb_pool_get_conn(duda_global_t *pool_key, duda_request_t *d
         } else {
             conn_config = config->conn_config;
             conn = mariadb_conn_create(dr, conn_config.user, conn_config.password,
-                                       conn_config.ip, conn_config.db, conn_config.port,
+                                       conn_config.host, conn_config.db, conn_config.port,
                                        conn_config.unix_socket, conn_config.client_flag);
             if (!conn) {
                 return NULL;
