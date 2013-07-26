@@ -1,0 +1,126 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+
+/*  Duda I/O
+ *  ------------------
+ *  Copyright (C) 2012, Eduardo Silva P. <edsiper@gmail.com>
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Library General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+#ifndef DUDA_WEBSERVICE_H
+#define DUDA_WEBSERVICE_H
+
+/* System headers */
+#include <sys/types.h>
+#include <sys/syscall.h>
+
+/* Monkey specifics */
+#include "MKPlugin.h"
+#include "duda_api.h"
+#include "duda_map.h"
+#include "duda_global.h"
+#include "duda_package.h"
+#include "duda_param.h"
+#include "duda_session.h"
+#include "duda_cookie.h"
+#include "duda_data.h"
+#include "duda_conf.h"
+#include "duda_xtime.h"
+#include "duda_console.h"
+#include "duda_objects.h"
+#include "duda_fconf.h"
+#include "duda_qs.h"
+
+struct duda_webservice ws;
+duda_package_t *pkg_temp;
+
+/* Duda Macros */
+#define DUDA_REGISTER(app_name, app_path) struct duda_webservice ws = {app_name, app_path}
+
+#define duda_load_package(object, package)                \
+    pkg_temp = api->duda->package_load(package, api);     \
+    mk_list_add(&pkg_temp->_head, &duda_ws_packages);     \
+    object = pkg_temp->api;
+
+#define duda_service_add_interface(iface) do {              \
+        mk_list_add(&iface->_head,  &duda_map_interfaces);  \
+    } while(0);
+
+
+#define duda_map_add_interface(iface) mk_list_add(&iface->_head,  duda_map_interfaces)
+
+/* Invalid object messages */
+#undef mk_info
+#undef mk_warn
+#undef mk_err
+#undef mk_bug
+#define _invalid_call     " is invalid, use msg->x() object instead"
+#define mk_info(a, ...)   msg->err("mk_info()" _invalid_call)
+#define mk_warn(a, ...)   msg->err("mk_warn()" _invalid_call)
+#define mk_err(a, ...)    msg->err("mk_err()" _invalid_call)
+#define mk_bug(a, ...)    msg->err("mk_bug()" _invalid_call)
+
+
+struct duda_api_objects *duda_new_api_objects();
+
+
+/* We declare the hidden _duda_main() function to avoid some warnings */
+int _duda_main(struct duda_api_objects *api);
+
+/*
+ * This is the tricky initialization for the web service in question,
+ * Duda core will locate the _duda_bootstrap() symbol and invoke the
+ * function to set the global API objects and perform some basic data
+ * initialization, then it invoke the end-user routine under _duda_main()
+ */
+#define duda_main()                                                     \
+    _duda_bootstrap(struct duda_api_objects *api,                       \
+                    struct web_service *ws) {                           \
+        /* API Objects */                                               \
+        monkey   = api->monkey;                                         \
+        map      = api->map;                                            \
+        msg      = api->msg;                                            \
+        request  = api->request;                                        \
+        response = api->response;                                       \
+        debug    = api->debug;                                          \
+        event    = api->event;                                          \
+        console  = api->console;                                        \
+        param    = api->param;                                          \
+        session  = api->session;                                        \
+        cookie   = api->cookie;                                         \
+        global   = api->global;                                         \
+        qs       = api->qs;                                             \
+        data     = api->data;                                           \
+        conf     = api->conf;                                           \
+        fconf    = api->fconf;                                          \
+        worker   = api->worker;                                         \
+        xtime    = api->xtime;                                          \
+                                                                        \
+        /* Reference to this web service */                             \
+        self = ws;                                                      \
+                                                                        \
+        /* Initialize global linked lists */                            \
+        mk_list_init(&duda_map_interfaces);                             \
+        mk_list_init(&duda_map_urls);                                   \
+        mk_list_init(&duda_global_dist);                                \
+        mk_list_init(&duda_ws_packages);                                \
+        mk_list_init(&duda_worker_list);                                \
+                                                                        \
+        /* Invoke end-user main routine */                              \
+        return _duda_main(api);                                         \
+    }                                                                   \
+    int _duda_main(struct duda_api_objects *api)
+
+#endif
