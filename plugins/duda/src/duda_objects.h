@@ -25,6 +25,7 @@
  */
 
 #include "mk_macros.h"
+#include "duda_global.h"
 
 #ifndef DUDA_OBJECTS_H
 #define DUDA_OBJECTS_H
@@ -44,6 +45,7 @@ struct duda_api_response *response;
 struct duda_api_debug *debug;
 struct duda_api_event *event;
 struct duda_api_console *console;
+struct duda_api_gc *gc;
 struct duda_api_param *param;
 struct duda_api_session *session;
 struct duda_api_cookie *cookie;
@@ -55,5 +57,18 @@ struct duda_api_global *global;
 struct duda_api_worker *worker;
 struct duda_api_xtime *xtime;
 struct web_service *self;
+
+/* system headers */
+#define _GNU_SOURCE         /* See feature_test_macros(7) */
+#include <unistd.h>
+#include <sys/syscall.h>   /* For SYS_xxx definitions */
+
+/* function that depends on webservice or package specific data */
+static inline void duda_global_init(duda_global_t *global, void *(*callback)())
+{
+    pthread_key_create(&global->key, NULL);
+    global->callback = callback;
+    mk_list_add(&global->_head, &duda_global_dist);
+}
 
 #endif

@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
-/*  Monkey HTTP Daemon
- *  ------------------
+/*  Duda I/O
+ *  --------
  *  Copyright (C) 2012, Eduardo Silva P. <edsiper@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -20,7 +20,8 @@
  */
 
 /*
- * @OBJ_NAME: SQLite
+ * @OBJ_NAME: sqlite
+ * @OBJ_MENU: SQLite
  * @OBJ_DESC: The SQLite package expose a set of wrapper methods to use the
  * SQLite database.
  * @PKG_HEADER: #include "packages/sqlite/sqlite.h"

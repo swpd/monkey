@@ -27,6 +27,7 @@
 #include "MKPlugin.h"
 #include "mk_list.h"
 #include "duda.h"
+#include "duda_gc.h"
 #include "duda_map.h"
 #include "duda_event.h"
 #include "duda_global.h"
@@ -91,6 +92,7 @@ struct duda_api_objects {
     struct duda_api_response *response;
     struct duda_api_debug *debug;
     struct duda_api_event *event;
+    struct duda_api_gc *gc;
     struct duda_api_console *console;
     struct duda_api_global *global;
     struct duda_api_param *param;

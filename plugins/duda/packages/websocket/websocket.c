@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
-/*  Duda Framework
- *  --------------
+/*  Duda I/O
+ *  --------
  *  Copyright (C) 2012, Eduardo Silva P. <edsiper@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -20,7 +20,8 @@
  */
 
 /*
- * @OBJ_NAME: Websocket
+ * @OBJ_NAME: websocket
+ * @OBJ_MENU: Web Sockets
  * @OBJ_DESC: This package implements the Websocket protocol as described in
  * the RFC 6455. It allow to define callbacks on specifics events and also implements
  * a broadcaster service to make easier distribute message among different active
@@ -81,7 +82,7 @@
  * able to get multiple frames and assemble them
  */
 
-int cb_ws_read(int sockfd, struct duda_request *dr)
+int cb_ws_read(int sockfd, void *data)
 {
     uint64_t i;
     int n;
@@ -95,6 +96,7 @@ int cb_ws_read(int sockfd, struct duda_request *dr)
     uint64_t payload_length = 0;
     unsigned int masking_key_offset = 0;
     ws_request_t *wr;
+    duda_request_t *dr = data;
 
     wr = ws_request_get(sockfd);
     if (!wr){
@@ -196,9 +198,10 @@ int cb_ws_read(int sockfd, struct duda_request *dr)
     return DUDA_EVENT_OWNED;
 }
 
-int cb_ws_error(int sockfd, struct duda_request *dr)
+int cb_ws_error(int sockfd, void *data)
 {
     ws_request_t *wr;
+    duda_request_t *dr = data;
 
     wr = ws_request_get(sockfd);
     if (!wr){
@@ -213,9 +216,10 @@ int cb_ws_error(int sockfd, struct duda_request *dr)
     return DUDA_EVENT_OWNED;
 }
 
-int cb_ws_close(int sockfd, struct duda_request *dr)
+int cb_ws_close(int sockfd, void *data)
 {
     ws_request_t *wr;
+    duda_request_t *dr = data;
 
     wr = ws_request_get(sockfd);
     if (!wr){
@@ -229,9 +233,10 @@ int cb_ws_close(int sockfd, struct duda_request *dr)
     return DUDA_EVENT_CLOSE;
 }
 
-int cb_ws_timeout(int sockfd, struct duda_request *dr)
+int cb_ws_timeout(int sockfd, void *data)
 {
     ws_request_t *wr;
+    duda_request_t *dr = data;
 
     wr = ws_request_get(sockfd);
     if (!wr){
@@ -370,8 +375,14 @@ int ws_handshake(duda_request_t *dr, int channel)
         ws_request_add(wr_node);
 
         /* Register socket with plugin events interface */
-        event->add(dr->socket, dr, DUDA_EVENT_READ, DUDA_EVENT_LEVEL_TRIGGERED,
-                   cb_ws_read, NULL, cb_ws_error, cb_ws_close, cb_ws_timeout);
+        event->add(dr->socket, DUDA_EVENT_READ, DUDA_EVENT_LEVEL_TRIGGERED,
+                   cb_ws_read, NULL, cb_ws_error, cb_ws_close, cb_ws_timeout, dr);
+
+        /* provide request handle by calling on_open */
+        if (wr_node->cb_on_open) {
+            wr_node->cb_on_open(dr, wr_node);
+        }
+
         return 0;
     }
 

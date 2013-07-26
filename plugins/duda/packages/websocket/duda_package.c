@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
-/*  Monkey HTTP Daemon
- *  ------------------
+/*  Duda I/O
+ *  --------
  *  Copyright (C) 2001-2012, Eduardo Silva P. <edsiper@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -61,7 +61,7 @@ duda_package_t *duda_package_main(struct duda_api_objects *api)
     memset(ws_callbacks, '\0', sizeof(struct ws_callbacks_t));
 
     /* Package internals */
-    duda_global_init(ws_request_list , cb_request_list_init);
+    global->init(&ws_request_list, cb_request_list_init);
 
     /* Package object */
     dpkg = monkey->mem_alloc(sizeof(duda_package_t));
