@@ -142,7 +142,8 @@ int mariadb_pool_set_ssl(duda_global_t *pool_key, const char *key, const char *c
     return MARIADB_OK;
 }
 
-mariadb_conn_t *mariadb_pool_get_conn(duda_global_t *pool_key, duda_request_t *dr)
+mariadb_conn_t *mariadb_pool_get_conn(duda_global_t *pool_key, duda_request_t *dr,
+                                      mariadb_connect_cb *cb)
 {
     mariadb_pool_t *pool;
     mariadb_pool_config_t *config;
@@ -196,6 +197,7 @@ mariadb_conn_t *mariadb_pool_get_conn(duda_global_t *pool_key, duda_request_t *d
 
     conn = mk_list_entry_first(&pool->free_conns, mariadb_conn_t, _pool_head);
     conn->dr = dr;
+    conn->connect_cb = cb;
 
     mk_list_del(&conn->_pool_head);
     mk_list_add(&conn->_pool_head, &pool->busy_conns);

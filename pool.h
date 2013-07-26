@@ -56,7 +56,8 @@ int mariadb_pool_create(duda_global_t *pool_key, int min_size, int max_size,
 int mariadb_pool_set_ssl(duda_global_t *pool_key, const char *key, const char *cert,
                          const char *ca, const char *capath, const char *cipher);
 
-mariadb_conn_t *mariadb_pool_get_conn(duda_global_t *pool_key, duda_request_t *dr);
+mariadb_conn_t *mariadb_pool_get_conn(duda_global_t *pool_key, duda_request_t *dr,
+                                      mariadb_connect_cb *cb);
 
 void mariadb_pool_reclaim_conn(mariadb_conn_t *conn);
 
