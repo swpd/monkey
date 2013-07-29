@@ -178,7 +178,7 @@ void mariadb_async_handle_result(mariadb_conn_t *conn)
     }
 
     if (query->result_cb) {
-        query->result_cb(query, query->fields, conn->dr);
+        query->result_cb(query, query->n_fields, query->fields, conn->dr);
     }
     mariadb_async_handle_row(conn);
 }
