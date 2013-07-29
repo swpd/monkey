@@ -43,7 +43,7 @@ package to variable DIRS, make sure it looks like:
 
     DIRS    = base64 json sha1 sha256 kv sqlite websocket ssls mariadb
 
-<a id='config'></a>
+#### Configure & Build ####
 configure monkey with duda plugin enabled:
 
     ./configure --enable-plugins=duda
@@ -74,7 +74,7 @@ change to Monkey's directory:
 
     git checkout mariadb
 
-That's it, configure Monkey and build it (refer to [this](#config))
+That's it, configure Monkey and build it (refer to [this](#configure--build))
 
 ## Usage ##
 To start with this package, the header file shall be included in your duda web
