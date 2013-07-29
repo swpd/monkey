@@ -154,9 +154,6 @@ void mariadb_async_handle_result(mariadb_conn_t *conn)
     mariadb_query_t *query = conn->current_query;
 
     query->result = mysql_use_result(&conn->mysql);
-    if (query->result_cb) {
-        query->result_cb(query, conn->dr);
-    }
     if (!query->result) {
         mariadb_query_free(query);
         conn->state = CONN_STATE_CONNECTED;
@@ -180,6 +177,9 @@ void mariadb_async_handle_result(mariadb_conn_t *conn)
         (query->fields)[i] = monkey->str_dup(fields[i].name);
     }
 
+    if (query->result_cb) {
+        query->result_cb(query, query->fields, conn->dr);
+    }
     mariadb_async_handle_row(conn);
 }
 
