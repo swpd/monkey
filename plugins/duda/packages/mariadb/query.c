@@ -53,6 +53,5 @@ void mariadb_query_free(mariadb_query_t *query)
     }
     FREE(query->fields);
     FREE(query->query_str);
-    FREE(query->row_cb_privdata);
     FREE(query);
 }
