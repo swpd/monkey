@@ -246,3 +246,16 @@ and carefully.
 
 ### API Documentation ###
 For full API reference of this package, please consult `plugins/duda/docs/html/packages/mariadb.html`.
+
+### FAQ ###
+1. Why do I get error like this: Can't connect to local MySQL server through
+socket '/tmp/mysql.sock'?
+
+    It may be caused by the following reasons:
+
+    You don't have MariaDB server set up properly;
+
+    You are using the default unix socket path compiled with the client library,
+    which may differ from your MariaDB server;
+
+    The path you provide is wrong.
