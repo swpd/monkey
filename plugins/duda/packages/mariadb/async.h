@@ -33,7 +33,7 @@ void mariadb_async_handle_release(mariadb_conn_t* conn, int status);
 
 int mariadb_async_handle_add_query(mariadb_conn_t *conn, const char *query_str,
                                    mariadb_query_result_cb *result_cb,
-                                   mariadb_query_row_cb *row_cb, void *row_cb_privdata,
-                                   mariadb_query_end_cb *end_cb);
+                                   mariadb_query_row_cb *row_cb,
+                                   mariadb_query_end_cb *end_cb, void *privdata);
 
 #endif

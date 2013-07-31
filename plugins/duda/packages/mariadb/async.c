@@ -178,7 +178,7 @@ void mariadb_async_handle_result(mariadb_conn_t *conn)
     }
 
     if (query->result_cb) {
-        query->result_cb(query, query->n_fields, query->fields, conn->dr);
+        query->result_cb(query->privdata, query, query->n_fields, query->fields, conn->dr);
     }
     mariadb_async_handle_row(conn);
 }
@@ -202,15 +202,15 @@ void mariadb_async_handle_row(mariadb_conn_t *conn)
                          mysql_error(&conn->mysql));
             } else {
                 if (query->end_cb) {
-                    query->end_cb(query, conn->dr);
+                    query->end_cb(query->privdata, query, conn->dr);
                 }
             }
             mariadb_async_handle_result_free(conn);
             break;
         }
         if (query->row_cb) {
-            query->row_cb(query->row_cb_privdata, query->n_fields,
-                                query->fields, query->row, conn->dr);
+            query->row_cb(query->privdata, query->n_fields, query->fields,
+                          query->row, conn->dr);
         }
     }
 }
@@ -309,23 +309,23 @@ void mariadb_async_handle_release(mariadb_conn_t* conn, int status)
 /*
  * @METHOD_NAME: query
  * @METHOD_DESC: Enqueue a new query to a MariaDB connection.
- * @METHOD_PROTO: int query(mariadb_conn_t *conn, const char *query_str, mariadb_query_result_cb *result_cb, mariadb_query_row_cb *row_cb, void *row_cb_privdata, mariadb_query_end_cb *end_cb)
+ * @METHOD_PROTO: int query(mariadb_conn_t *conn, const char *query_str, mariadb_query_result_cb *result_cb, mariadb_query_row_cb *row_cb, void *privdata, mariadb_query_end_cb *end_cb)
  * @METHOD_PARAM: conn The MariaDB connection handle.
  * @METHOD_PARAM: query_str The SQL statement string of this query.
  * @METHOD_PARAM: result_cb The callback function that will take actions when the result set of this query is available.
  * @METHOD_PARAM: row_cb The callback function that will take actions when every row of the result set is fetched.
- * @METHOD_PARAM: row_cb_privdata: The user defined private data that will be passed to `row_cb'.
+ * @METHOD_PARAM: privdata: The user defined private data that will be passed to `row_cb'.
  * @METHOD_PARAM: end_cb The callback function that will take actions after all the row in the result set are fetched.
  * @METHOD_RETURN: MAIRADB_OK on success, or MARIADB_ERR on failure.
  */
 
 int mariadb_async_handle_add_query(mariadb_conn_t *conn, const char *query_str,
                                    mariadb_query_result_cb *result_cb,
-                                   mariadb_query_row_cb *row_cb, void *row_cb_privdata,
-                                   mariadb_query_end_cb *end_cb)
+                                   mariadb_query_row_cb *row_cb,
+                                   mariadb_query_end_cb *end_cb, void *privdata)
 {
     mariadb_query_t *query = mariadb_query_init(query_str, result_cb, row_cb,
-                                                row_cb_privdata, end_cb);
+                                                privdata, end_cb);
     if (!query) {
         msg->err("[FD %i] MariaDB Add Query Error", conn->fd);
         return MARIADB_ERR;
