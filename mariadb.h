@@ -59,7 +59,7 @@ typedef struct duda_api_mariadb {
     void (*disconnect)(mariadb_conn_t *, mariadb_disconnect_cb *);
     unsigned long (*escape)(mariadb_conn_t *, char *, const char *, unsigned long);
     int (*query)(mariadb_conn_t *, const char *, mariadb_query_result_cb *,
-                 mariadb_query_row_cb *, void *, mariadb_query_end_cb *);
+                 mariadb_query_row_cb *, mariadb_query_end_cb *, void *);
     void (*abort)(mariadb_query_t *);
 } mariadb_object_t;
 

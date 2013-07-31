@@ -25,22 +25,22 @@
 
 mariadb_query_t *mariadb_query_init(const char *query_str,
                                     mariadb_query_result_cb *result_cb,
-                                    mariadb_query_row_cb *row_cb, void *row_cb_privdata,
-                                    mariadb_query_end_cb *end_cb)
+                                    mariadb_query_row_cb *row_cb,
+                                    mariadb_query_end_cb *end_cb, void *privdata)
 {
     mariadb_query_t *query = monkey->mem_alloc(sizeof(mariadb_query_t));
     if (!query)
         return NULL;
-    query->query_str       = monkey->str_dup(query_str);
-    query->n_fields        = 0;
-    query->fields          = NULL;
-    query->result_cb       = result_cb;
-    query->row_cb          = row_cb;
-    query->end_cb          = end_cb;
-    query->row_cb_privdata = row_cb_privdata;
-    query->error           = 0;
-    query->result          = NULL;
-    query->abort           = QUERY_ABORT_NO;
+    query->query_str = monkey->str_dup(query_str);
+    query->n_fields  = 0;
+    query->fields    = NULL;
+    query->result_cb = result_cb;
+    query->row_cb    = row_cb;
+    query->end_cb    = end_cb;
+    query->privdata  = privdata;
+    query->error     = 0;
+    query->result    = NULL;
+    query->abort     = QUERY_ABORT_NO;
     return query;
 }
 

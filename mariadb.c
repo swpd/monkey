@@ -123,8 +123,9 @@ int mariadb_on_read(int fd, void *data)
                              mysql_error(&conn->mysql));
                 } else {
                     if (conn->current_query->end_cb) {
-                        conn->current_query->end_cb(conn->current_query,
-                                                          conn->dr);
+                        conn->current_query->end_cb(conn->current_query->privdata,
+                                                    conn->current_query,
+                                                    conn->dr);
                     }
                 }
                 mariadb_async_handle_result_free(conn);
@@ -134,11 +135,11 @@ int mariadb_on_read(int fd, void *data)
                 break;
             }
             if (conn->current_query->row_cb) {
-                conn->current_query->row_cb(conn->current_query->row_cb_privdata,
-                                                  conn->current_query->n_fields,
-                                                  conn->current_query->fields,
-                                                  conn->current_query->row,
-                                                  conn->dr);
+                conn->current_query->row_cb(conn->current_query->privdata,
+                                            conn->current_query->n_fields,
+                                            conn->current_query->fields,
+                                            conn->current_query->row,
+                                            conn->dr);
             }
         }
         break;

@@ -24,12 +24,14 @@
 
 typedef struct mariadb_query mariadb_query_t;
 
-typedef void (mariadb_query_result_cb)(mariadb_query_t *query, unsigned long n_fields,
-                                       char **fields, duda_request_t *dr);
+typedef void (mariadb_query_result_cb)(void *privdata, mariadb_query_t *query,
+                                       unsigned long n_fields, char **fields,
+                                       duda_request_t *dr);
 
 typedef void (mariadb_query_row_cb)(void *privdata, unsigned long n_fields,
                                     char **fields, char **values, duda_request_t *dr);
 
-typedef void (mariadb_query_end_cb)(mariadb_query_t *query, duda_request_t *dr);
+typedef void (mariadb_query_end_cb)(void *privdata, mariadb_query_t *query,
+                                    duda_request_t *dr);
 
 #endif
