@@ -2,7 +2,7 @@ CC 	= $CC
 CFLAGS	= $CFLAGS
 LDFLAGS = $LDFLAGS
 DEFS    = $DEFS
-DIRS    = src packages docs
+DIRS    = src packages docs services
 INCDIR  = ../../src/include
 
 all:
