@@ -52,7 +52,7 @@ edit `conf/sites/default` to add this web service:
 
 run the server:
 
-    `bin/monkey`
+    bin/monkey
 
 ### Serving Requests ###
 use your favorite client to visit the following URL to access this web service:
