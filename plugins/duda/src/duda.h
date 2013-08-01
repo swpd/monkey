@@ -19,14 +19,15 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include "MKPlugin.h"
+
+#include "duda_webservice.h"
 #include "duda_conf.h"
 #include "duda_gc_map.h"
 #include "duda_qs_map.h"
 
 #ifndef DUDA_MAIN_H
 #define DUDA_MAIN_H
-
-#include "MKPlugin.h"
 
 #define MAP_WS_APP_NAME   0X00
 #define MAP_WS_INTERFACE  0X10
@@ -87,6 +88,8 @@ typedef struct duda_request {
     struct rb_node _rb_head;
 
 } duda_request_t;
+
+//typedef struct duda_request duda_request_t;
 
 /* self identifier for the plugin context inside Monkey internals */
 struct plugin *duda_plugin;
