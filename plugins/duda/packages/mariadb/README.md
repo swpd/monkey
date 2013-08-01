@@ -72,6 +72,10 @@ clone the Monkey HTTP Daemon repository from my Github:
 
 change to Monkey's directory:
 
+    cd monkey
+
+check out `mariadb` branch:
+
     git checkout mariadb
 
 That's it, configure Monkey and build it (refer to [this](#configure--build))
@@ -154,7 +158,7 @@ service, and initialize it in `duda_main()`:
     {
         ...
         /* initialize a connection pool */
-        global->init(&some_pool, NULL);
+        duda_global_init(&some_pool, NULL, NULL);
         mariadb->create_pool(&some_pool, 0, 0, "user", "password", "localhost",
                              "database", 0, "/path/to/mariadb/unix/socket", 0);
         ...
