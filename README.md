@@ -72,6 +72,10 @@ clone the Monkey HTTP Daemon repository from my Github:
 
 change to Monkey's directory:
 
+    cd monkey
+
+check out `mariadb` branch:
+
     git checkout mariadb
 
 That's it, configure Monkey and build it (refer to [this](#configure--build))
