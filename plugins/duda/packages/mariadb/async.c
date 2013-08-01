@@ -325,7 +325,7 @@ int mariadb_async_handle_add_query(mariadb_conn_t *conn, const char *query_str,
                                    mariadb_query_end_cb *end_cb, void *privdata)
 {
     mariadb_query_t *query = mariadb_query_init(query_str, result_cb, row_cb,
-                                                privdata, end_cb);
+                                                end_cb, privdata);
     if (!query) {
         msg->err("[FD %i] MariaDB Add Query Error", conn->fd);
         return MARIADB_ERR;
