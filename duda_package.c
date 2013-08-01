@@ -64,7 +64,7 @@ duda_package_t *duda_package_main(struct duda_api_objects *api)
 
     duda_package_init();
 
-    global->init(&mariadb_conn_list, NULL);
+    duda_global_init(&mariadb_conn_list, NULL, NULL);
     mk_list_init(&mariadb_pool_config_list);
 
     dpkg          = monkey->mem_alloc(sizeof(duda_package_t));
