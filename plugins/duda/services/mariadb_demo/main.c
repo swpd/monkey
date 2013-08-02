@@ -340,7 +340,7 @@ int duda_main()
     duda_load_package(mariadb, "mariadb");
     duda_load_package(json, "json");
 
-    global->init(&demo_pool, NULL);
+    duda_global_init(&demo_pool, NULL, NULL);
     mariadb->create_pool(&demo_pool, 0, 0, "user", "passwd", "localhost", NULL,
                          0, NULL, 0);
 
