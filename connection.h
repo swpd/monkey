@@ -24,4 +24,10 @@
 
 typedef struct postgresql_conn postgresql_conn_t;
 
+typedef void (postgresql_connect_cb)(postgresql_conn_t *conn, int status,
+                                     duda_request_t *dr);
+
+typedef void (postgresql_disconnect_cb)(postgresql_conn_t *conn, int status,
+                                        duda_request_t dr);
+
 #endif

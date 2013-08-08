@@ -22,13 +22,28 @@
 #ifndef POSTGRESQL_CONNECTION_PRIV_H
 #define POSTGRESQL_CONNECTION_PRIV_H
 
+#include "connection.h"
+
 struct postgresql_conn {
     struct duda_request *dr;
     PGconn *conn;
     int fd;
+    ConnStatusType state;
+
+    postgresql_connect_cb *connect_cb;
+    postgresql_disconnect_cb *disconnect_cb;
 
     struct mk_list queries;
     struct mk_list _head;
 };
+
+postgresql_conn_t *postgresql_conn_connect(duda_request_t *dr, postgresql_connect_cb *cb,
+                                           const char **keys, const char **values,
+                                           int expand_dbname);
+
+postgresql_conn_t *postgresql_conn_connect_url(duda_request_t *dr, postgresql_connect_cb *cb,
+                                               const char *url);
+
+void postgresql_conn_disconnect(postgresql_conn_t *conn, postgresql_disconnect_cb *cb);
 
 #endif

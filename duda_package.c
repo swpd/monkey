@@ -38,6 +38,10 @@ postgresql_object_t *get_postgresql_api()
     /* Alloc PostgreSQL object */
     postgresql = monkey->mem_alloc(sizeof(postgresql_object_t));
 
+    postgresql->connect     = postgresql_conn_connect;
+    postgresql->connect_url = postgresql_conn_connect_url;
+    postgresql->disconnect  = postgresql_conn_disconnect;
+
     /* Map API calls */
 
     return postgresql;
