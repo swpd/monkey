@@ -22,6 +22,10 @@
 #ifndef DUDA_PACKAGE_POSTGRESQL_H
 #define DUDA_PACKAGE_POSTGRESQL_H
 
+#include "common.h"
+#include "query.h"
+#include "connection.h"
+
 duda_global_t postgresql_conn_list;
 
 typedef struct duda_api_postgresql {
