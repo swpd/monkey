@@ -22,6 +22,21 @@
 #include <libpq-fe.h>
 #include "postgresql.h"
 
+static inline postgresql_conn_t *__postgresql_get_conn(int fd)
+{
+    struct mk_list *conn_list, *head;
+    postgresql_conn_t *conn = NULL;
+
+    conn_list = global->get(postgresql_conn_list);
+    mk_list_foreach(head, conn_list) {
+        conn = mk_list_entry(head, postgresql_conn_t, _head);
+        if (conn->fd == fd) {
+            break;
+        }
+    }
+    return conn;
+}
+
 int postgresql_on_read(int fd, void *data)
 {
     (void) data;
