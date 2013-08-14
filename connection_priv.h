@@ -24,14 +24,23 @@
 
 #include "connection.h"
 
+typedef enum {
+    CONN_STATE_CLOSED,
+    CONN_STATE_CONNECTING, CONN_STATE_CONNECTED,
+    CONN_STATE_QUERYING, CONN_STATE_QUERIED,
+    CONN_STATE_ROW_FETCHING, CONN_STATE_ROW_FETCHED,
+} postgresql_conn_state_t;
+
 struct postgresql_conn {
     struct duda_request *dr;
     PGconn *conn;
     int fd;
-    ConnStatusType state;
+    postgresql_conn_state_t state;
 
     postgresql_connect_cb *connect_cb;
     postgresql_disconnect_cb *disconnect_cb;
+
+    int disconnect_on_finish;
 
     struct mk_list queries;
     struct mk_list _head;

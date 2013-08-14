@@ -31,9 +31,13 @@ static inline postgresql_conn_t *__postgresql_conn_create(duda_request_t *dr,
         return NULL;
     }
 
-    conn->dr            = dr;
-    conn->connect_cb    = cb;
-    conn->disconnect_cb = NULL;
+    conn->dr                   = dr;
+    conn->conn                 = NULL;
+    conn->fd                   = 0;
+    conn->connect_cb           = cb;
+    conn->disconnect_cb        = NULL;
+    conn->state                = CONN_STATE_CLOSE;
+    conn->disconnect_on_finish = 0;
     mk_list_init(&conn->queries);
 
     return conn;
@@ -43,35 +47,51 @@ static inline void __postgresql_conn_handle_connect(postgresql_conn_t *conn)
 {
     if (!conn->conn) {
         FREE(conn);
-        return NULL;
+        return;
     }
 
-    conn->state = PQstatus(conn->conn);
     if (PQstatus(conn->conn) == CONNECTION_BAD) {
-        msg->err("PostgreSQL Connect Error");
+        msg->err("PostgreSQL Connect Error: %s", PQerrorMessage(conn->conn));
         if (conn->connect_cb) {
             conn->connect_cb(conn, POSTGRESQL_ERR, conn->dr);
         }
-        PQfinish(conn->conn);
-        FREE(conn);
-        return NULL;
+        goto cleanup;
     }
 
-    /* on success */
+    /* set soecket non-blocking mode */
+    int ret = PQsetnonblocking(conn->conn, 1);
+    if (ret == -1) {
+        msg->err("PostgreSQL Set Non-blocking Error");
+        goto cleanup;
+    }
+    
     conn->fd = PQsocket(conn->conn);
     if (conn->state == CONNECTION_OK || conn->state == CONNECTION_MADE) {
+    }
+
+    int events = 0;
+    int status = PQconnectPoll(conn->conn);
+
+    if (status == PGRES_POLLING_FAILED) {
+        msg->err("PostgreSQL Connect Error: %s", PQerrorMessage(conn->conn));
+        if (conn->connect_cb) {
+            conn->connect_cb(conn, POSTGRESQL_ERR, conn->dr);
+        }
+        goto cleanup;
+    } else if (status == PGRES_POLLING_OK) {
+        /* on connected */
         if (conn->connect_cb) {
             conn->connect_cb(conn, POSTGRESQL_OK, conn->dr);
         }
-    }
-    
-    int status = PQconnectPoll(conn->conn);
-    int events = 0;
-    if (status & PGRES_POLLING_READING) {
-        events |= DUDA_EVENT_READ;
-    }
-    if (status & PGRES_POLLING_WRITING) {
-        events |= DUDA_EVENT_WRITE;
+        conn->state = CONN_STATE_CONNECTED;
+    } else {
+        if (status & PGRES_POLLING_READING) {
+            events |= DUDA_EVENT_READ;
+        }
+        if (status & PGRES_POLLING_WRITING) {
+            events |= DUDA_EVENT_WRITE;
+        }
+        conn->state = CONN_STATE_CONNECTING;
     }
 
     event->add(conn->fd, events, DUDA_EVENT_LEVEL_TRIGGERED,
@@ -82,15 +102,17 @@ static inline void __postgresql_conn_handle_connect(postgresql_conn_t *conn)
     if (!conn_list) {
         conn_list = monkey->mem_alloc(sizeof(struct mk_list));
         if (!conn_list) {
-            msg->err("Connection List Init Error");
-            PQfinish(conn->conn);
-            FREE(conn);
-            return NULL;
+            msg->err("PostgreSQL Connection List Init Error");
+            goto cleanup;
         }
         mk_list_init(conn_list);
         global->set(postgresql_conn_list, (void *) conn_list);
     }
     mk_list_add(&conn->_head, conn_list);
+
+cleanup:
+    PQfinish(conn->conn);
+    FREE(conn);
 }
 
 postgresql_conn_t *postgresql_conn_connect(duda_request_t *dr, postgresql_connect_cb *cb,
@@ -130,6 +152,7 @@ static void __postgresql_conn_handle_release(postgresql_conn_t *conn, int status
     if (conn->disconnect_cb) {
         conn->disconnect_cb(conn, status, conn->dr);
     }
+    conn->state = CONN_STATE_CLOSED;
     mk_list_del(&conn->_head);
     PQfinish(conn->conn);
     FREE(conn);
@@ -137,4 +160,10 @@ static void __postgresql_conn_handle_release(postgresql_conn_t *conn, int status
 
 void postgresql_conn_disconnect(postgresql_conn_t *conn, postgresql_disconnect_cb *cb)
 {
+    conn->disconnect_cb = disconnect_cb;
+    if (conn->state != CONN_STATE_CONNECTED) {
+        conn->disconnect_on_finish = 1;
+        return;
+    }
+    __postgresql_conn_handle_release(conn, POSTGRESQL_OK);
 }
