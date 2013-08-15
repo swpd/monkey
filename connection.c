@@ -68,7 +68,7 @@ static inline void __postgresql_conn_handle_connect(postgresql_conn_t *conn)
         msg->err("PostgreSQL Set Non-blocking Error");
         goto cleanup;
     }
-    
+
     conn->fd = PQsocket(conn->conn);
     if (conn->state == CONNECTION_OK || conn->state == CONNECTION_MADE) {
     }
