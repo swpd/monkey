@@ -20,8 +20,10 @@
  */
 
 #include <libpq-fe.h>
-#include "common.h"
+#include "postgresql.h"
+#include "query_priv.h"
 #include "connection_priv.h"
+#include "async.h"
 
 static inline postgresql_conn_t *__postgresql_conn_create(duda_request_t *dr,
                                                           postgresql_connect_cb *cb)
@@ -34,8 +36,10 @@ static inline postgresql_conn_t *__postgresql_conn_create(duda_request_t *dr,
     conn->dr                   = dr;
     conn->conn                 = NULL;
     conn->fd                   = 0;
+    conn->res                  = NULL;
     conn->connect_cb           = cb;
     conn->disconnect_cb        = NULL;
+    conn->current_query        = NULL;
     conn->state                = CONN_STATE_CLOSE;
     conn->disconnect_on_finish = 0;
     mk_list_init(&conn->queries);
@@ -110,6 +114,10 @@ static inline void __postgresql_conn_handle_connect(postgresql_conn_t *conn)
     }
     mk_list_add(&conn->_head, conn_list);
 
+    if (conn->state == CONN_STATE_CONNECTED) {
+        postgresql_async_handle_query(conn);
+    }
+
 cleanup:
     PQfinish(conn->conn);
     FREE(conn);
@@ -146,7 +154,7 @@ postgresql_conn_t *postgresql_conn_connect_url(duda_request_t *dr, postgresql_co
     return conn;
 }
 
-static void __postgresql_conn_handle_release(postgresql_conn_t *conn, int status)
+void postgresql_conn_handle_release(postgresql_conn_t *conn, int status)
 {
     event->delete(conn->fd);
     if (conn->disconnect_cb) {
@@ -155,6 +163,11 @@ static void __postgresql_conn_handle_release(postgresql_conn_t *conn, int status
     conn->state = CONN_STATE_CLOSED;
     mk_list_del(&conn->_head);
     PQfinish(conn->conn);
+    while (mk_list_is_empty(&conn->queries) != 0) {
+        postgresql_query_t *query = mk_list_entry_first(&conn->queries,
+                                                        postgresql_query_t, _head);
+        postgresql_query_free(query);
+    }
     FREE(conn);
 }
 
@@ -165,5 +178,5 @@ void postgresql_conn_disconnect(postgresql_conn_t *conn, postgresql_disconnect_c
         conn->disconnect_on_finish = 1;
         return;
     }
-    __postgresql_conn_handle_release(conn, POSTGRESQL_OK);
+    postgresql_conn_handle_release(conn, POSTGRESQL_OK);
 }

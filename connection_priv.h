@@ -35,11 +35,13 @@ struct postgresql_conn {
     struct duda_request *dr;
     PGconn *conn;
     int fd;
+    PGresult *res;
     postgresql_conn_state_t state;
 
     postgresql_connect_cb *connect_cb;
     postgresql_disconnect_cb *disconnect_cb;
 
+    postgresql_query_t *current_query;
     int disconnect_on_finish;
 
     struct mk_list queries;
@@ -52,6 +54,8 @@ postgresql_conn_t *postgresql_conn_connect(duda_request_t *dr, postgresql_connec
 
 postgresql_conn_t *postgresql_conn_connect_url(duda_request_t *dr, postgresql_connect_cb *cb,
                                                const char *url);
+
+void postgresql_conn_handle_release(postgresql_conn_t *conn, int status);
 
 void postgresql_conn_disconnect(postgresql_conn_t *conn, postgresql_disconnect_cb *cb);
 
