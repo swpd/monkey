@@ -21,6 +21,7 @@
 
 #include <libpq-fe.h>
 #include "postgresql.h"
+#include "async.h"
 
 static inline postgresql_conn_t *__postgresql_get_conn(int fd)
 {
@@ -41,6 +42,50 @@ int postgresql_on_read(int fd, void *data)
 {
     (void) data;
     msg->info("[FD %i] PostgreSQL Connection Handler / read", fd);
+    postgresql_conn_t *conn = __postgresql_get_conn(fd);
+
+    if (!conn) {
+        msg->err("[FD %i] Error: PostgreSQL Connection Not Found", fd);
+        return DUDA_EVENT_CLOSE;
+    }
+
+    int events = 0;
+    int status, i, j;
+    postgresql_query_t *query;
+    switch (conn->state) {
+    case CONN_STATE_CONNECTING:
+        status = PQconnectPoll(conn->conn);
+        if (status == PGRES_POLLING_FAILED) {
+            msg->err("PostgreSQL Connect Error: %s", PQerrorMessage(conn->conn));
+            if (conn->connect_cb) {
+                conn->connect_cb(conn, POSTGRESQL_ERR, conn->dr);
+            }
+            return DUDA_EVENT_CLOSE;
+        } else if (status == PGRES_POLLING_OK) {
+            /* on connected */
+            if (conn->connect_cb) {
+                conn->connect_cb(conn, POSTGRESQL_OK, conn->dr);
+            }
+            conn->state = CONN_STATE_CONNECTED;
+            postgresql_async_handle_query(conn);
+        } else {
+            if (status & PGRES_POLLING_READING) {
+                events |= DUDA_EVENT_READ;
+            }
+            if (status & PGRES_POLLING_WRITING) {
+                events |= DUDA_EVENT_WRITE;
+            }
+            event->mode(conn->fd, events, DUDA_EVENT_LEVEL_TRIGGERED);
+        }
+        break;
+    case CONN_STATE_ROW_FETCHING:
+        postgresql_async_handle_row(conn);
+        if (conn->state == CONN_STATE_CONNECTED) {
+            postgresql_async_handle_query(conn);
+        }
+        break;
+    default:
+        break;
     return DUDA_EVENT_OWNED;
 }
 
@@ -48,6 +93,34 @@ int postgresql_on_write(int fd, void *data)
 {
     (void) data;
     msg->info("[FD %i] PostgreSQL Connection Handler / write", fd);
+    postgresql_conn_t *conn = __postgresql_get_conn(fd);
+
+    if (!conn) {
+        msg->err("[FD %i] Error: PostgreSQL Connection Not Found", fd);
+        return DUDA_EVENT_CLOSE;
+    }
+
+    int status;
+    switch (conn->state) {
+    case CONN_STATE_QUERYING:
+        status = PQflush(conn->conn);
+        if (status == -1) {
+            msg->err("[FD %i] PostgreSQL Send Query Error: %s", conn->fd,
+                     PQerrorMessage(conn->conn));
+            postgresql_query_free(conn->current_query);
+        } else if (status == 0) {
+            /* successfully send query */
+            conn->state = CONN_STATE_QUERIED;
+            event->mode(conn->fd, DUDA_EVENT_READ, DUDA_EVENT_LEVEL_TRIGGERED);
+            postgresql_async_handle_row(conn);
+            if (conn->state == CONN_STATE_CONNECTED) {
+                postgresql_async_handle_query(conn);
+            }
+        }
+        break;
+    }
+    default:
+        break;
     return DUDA_EVENT_OWNED;
 }
 
