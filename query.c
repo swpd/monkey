@@ -33,14 +33,16 @@ postgresql_query_t *postgresql_query_init(const char *query_str,
     if (!query) {
         return NULL;
     }
-    query->query_str = monkey->str_dup(query_str);
-    query->n_fields  = 0;
-    query->fields    = NULL;
-    query->result_cb = result_cb;
-    query->row_cb    = row_cb;
-    query->end_cb    = end_cb;
-    query->privdata  = privdata;
-    query->result    = NULL;
+    query->query_str       = monkey->str_dup(query_str);
+    query->n_fields        = 0;
+    query->fields          = NULL;
+    query->single_row_mode = 0;
+    query->result_start    = 0;
+    query->result_cb       = result_cb;
+    query->row_cb          = row_cb;
+    query->end_cb          = end_cb;
+    query->privdata        = privdata;
+    query->result          = NULL;
     return query;
 }
 

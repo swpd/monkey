@@ -29,6 +29,10 @@ struct postgresql_query {
     PGresult *result;
     int n_fields;
     char **fields;
+    char **values;
+
+    int single_row_mode;
+    int result_start;
 
     postgresql_query_result_cb *result_cb;
     postgresql_query_row_cb *row_cb;
