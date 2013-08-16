@@ -28,6 +28,6 @@ typedef void (postgresql_connect_cb)(postgresql_conn_t *conn, int status,
                                      duda_request_t *dr);
 
 typedef void (postgresql_disconnect_cb)(postgresql_conn_t *conn, int status,
-                                        duda_request_t dr);
+                                        duda_request_t *dr);
 
 #endif

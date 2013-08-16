@@ -36,11 +36,10 @@ static inline postgresql_conn_t *__postgresql_conn_create(duda_request_t *dr,
     conn->dr                   = dr;
     conn->conn                 = NULL;
     conn->fd                   = 0;
-    conn->res                  = NULL;
     conn->connect_cb           = cb;
     conn->disconnect_cb        = NULL;
     conn->current_query        = NULL;
-    conn->state                = CONN_STATE_CLOSE;
+    conn->state                = CONN_STATE_CLOSED;
     conn->disconnect_on_finish = 0;
     mk_list_init(&conn->queries);
 
@@ -70,8 +69,6 @@ static inline void __postgresql_conn_handle_connect(postgresql_conn_t *conn)
     }
 
     conn->fd = PQsocket(conn->conn);
-    if (conn->state == CONNECTION_OK || conn->state == CONNECTION_MADE) {
-    }
 
     int events = 0;
     int status = PQconnectPoll(conn->conn);
@@ -173,7 +170,7 @@ void postgresql_conn_handle_release(postgresql_conn_t *conn, int status)
 
 void postgresql_conn_disconnect(postgresql_conn_t *conn, postgresql_disconnect_cb *cb)
 {
-    conn->disconnect_cb = disconnect_cb;
+    conn->disconnect_cb = cb;
     if (conn->state != CONN_STATE_CONNECTED) {
         conn->disconnect_on_finish = 1;
         return;

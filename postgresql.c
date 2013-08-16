@@ -21,6 +21,8 @@
 
 #include <libpq-fe.h>
 #include "postgresql.h"
+#include "query_priv.h"
+#include "connection_priv.h"
 #include "async.h"
 
 static inline postgresql_conn_t *__postgresql_get_conn(int fd)
@@ -50,8 +52,7 @@ int postgresql_on_read(int fd, void *data)
     }
 
     int events = 0;
-    int status, i, j;
-    postgresql_query_t *query;
+    int status;
     switch (conn->state) {
     case CONN_STATE_CONNECTING:
         status = PQconnectPoll(conn->conn);
@@ -86,6 +87,7 @@ int postgresql_on_read(int fd, void *data)
         break;
     default:
         break;
+    }
     return DUDA_EVENT_OWNED;
 }
 
@@ -118,9 +120,9 @@ int postgresql_on_write(int fd, void *data)
             }
         }
         break;
-    }
     default:
         break;
+    }
     return DUDA_EVENT_OWNED;
 }
 

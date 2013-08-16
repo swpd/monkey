@@ -28,8 +28,10 @@
  * @PKG_INIT: duda_load_package(postgresql, "postgresql");
  */
 
+#include <libpq-fe.h>
 #include "duda_package.h"
 #include "postgresql.h"
+#include "connection_priv.h"
 
 postgresql_object_t *get_postgresql_api()
 {

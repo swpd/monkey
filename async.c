@@ -93,31 +93,32 @@ void postgresql_async_handle_row(postgresql_conn_t *conn)
         }
 
         conn->state = CONN_STATE_ROW_FETCHED;
-        conn->res = PQgetResult(conn->conn);
-        if (conn->res) {
-            if (conn->single_row_mode) {
-                if (PQResultStatus(conn->res) == PGRES_SINGLE_TUPLE) {
+        query->result = PQgetResult(conn->conn);
+        if (query->result) {
+            if (query->single_row_mode) {
+                if (PQresultStatus(query->result) == PGRES_SINGLE_TUPLE) {
                     if (query->n_fields == 0) {
-                        query->n_fields = PQnfields(conn->res);
+                        query->n_fields = PQnfields(query->result);
                     }
 
                     if (!query->fields) {
                         query->fields = monkey->mem_alloc(sizeof(char *) * query->n_fields);
                         for (i = 0; i < query->n_fields; ++i) {
-                            query->fields[i] = monkey->str_dup(PQfname(res, i));
+                            query->fields[i] = monkey->str_dup(PQfname(query->result, i));
                         }
                     }
 
                     if (query->result_start == 0) {
                         if (query->result_cb) {
-                            query->result_cb(query->privdata, query, );
+                            query->result_cb(query->privdata, query, query->n_fields,
+                                             query->fields, conn->dr);
                         }
                         query->result_start = 1;
                     }
 
                     query->values = monkey->mem_alloc(sizeof(char *) * query->n_fields);
                     for (i = 0; i < query->n_fields; ++i) {
-                        query->values[i] = monkey->str_dup(PQgetvalue(res, 0, i));
+                        query->values[i] = monkey->str_dup(PQgetvalue(query->result, 0, i));
                     }
 
                     if (query->row_cb) {
@@ -130,7 +131,7 @@ void postgresql_async_handle_row(postgresql_conn_t *conn)
                         FREE(query->values[i]);
                     }
                     FREE(query->values);
-                } else if (PQResultStatus(conn->res) == PGRES_TUPLES_OK) {
+                } else if (PQresultStatus(query->result) == PGRES_TUPLES_OK) {
                     for (i = 0; i < query->n_fields; ++i) {
                         FREE(query->fields[i]);
                     }
@@ -141,29 +142,30 @@ void postgresql_async_handle_row(postgresql_conn_t *conn)
                              PQerrorMessage(conn->conn));
                 }
             } else {
-                if (PQResultStatus(conn->res) == PGRES_TUPLES_OK) {
+                if (PQresultStatus(query->result) == PGRES_TUPLES_OK) {
                     if (query->n_fields == 0) {
-                        query->n_fields = PQnfields(conn->res);
+                        query->n_fields = PQnfields(query->result);
                     }
 
                     if (!query->fields) {
                         query->fields = monkey->mem_alloc(sizeof(char *) * query->n_fields);
                         for (i = 0; i < query->n_fields; ++i) {
-                            query->fields[i] = monkey->str_dup(PQfname(res, i));
+                            query->fields[i] = monkey->str_dup(PQfname(query->result, i));
                         }
                     }
 
                     if (query->result_start == 0) {
                         if (query->result_cb) {
-                            query->result_cb(query->privdata, query, );
+                            query->result_cb(query->privdata, query, query->n_fields,
+                                             query->fields, conn->dr);
                         }
                         query->result_start = 1;
                     }
 
-                    for (i = 0; i < PQntuples(conn->res); ++i) {
+                    for (i = 0; i < PQntuples(query->result); ++i) {
                         query->values = monkey->mem_alloc(sizeof(char *) * query->n_fields);
                         for (j = 0; j < query->n_fields; ++j) {
-                            query->values[j] = monkey->str_dup(PQgetvalue(res, i, j));
+                            query->values[j] = monkey->str_dup(PQgetvalue(query->result, i, j));
                         }
                         if (query->row_cb) {
                             query->row_cb(query->privdata, query, query->n_fields,
@@ -185,7 +187,7 @@ void postgresql_async_handle_row(postgresql_conn_t *conn)
                              PQerrorMessage(conn->conn));
                 }
             }
-            PQclear(conn->res);
+            PQclear(query->result);
         } else {
             /* no more results */
             if (query->end_cb) {

@@ -30,10 +30,10 @@ duda_global_t postgresql_conn_list;
 
 typedef struct duda_api_postgresql {
     postgresql_conn_t *(*connect)(duda_request_t *, postgresql_connect_cb *,
-                                  const char **, const char **);
-    postgresql_conn_t *(connect_url)(duda_request_t *, postgresql_connect_cb *,
+                                  const char **, const char **, int);
+    postgresql_conn_t *(*connect_url)(duda_request_t *, postgresql_connect_cb *,
                                      const char *);
-    void *(disconnect)(postgresql_conn_t *, postgresql_disconnect_cb *);
+    void (*disconnect)(postgresql_conn_t *, postgresql_disconnect_cb *);
     int (*query)(postgresql_conn_t *, const char *, postgresql_query_result_cb *,
                  postgresql_query_row_cb *, postgresql_query_end_cb *, void *);
 } postgresql_object_t;

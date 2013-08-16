@@ -25,7 +25,7 @@
 #include "query.h"
 
 struct postgresql_query {
-    const char *query_str;
+    char *query_str;
     PGresult *result;
     int n_fields;
     char **fields;

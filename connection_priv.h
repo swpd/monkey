@@ -35,7 +35,6 @@ struct postgresql_conn {
     struct duda_request *dr;
     PGconn *conn;
     int fd;
-    PGresult *res;
     postgresql_conn_state_t state;
 
     postgresql_connect_cb *connect_cb;
