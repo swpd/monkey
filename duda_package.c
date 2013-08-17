@@ -42,6 +42,7 @@ postgresql_object_t *get_postgresql_api()
 
     postgresql->connect     = postgresql_conn_connect;
     postgresql->connect_url = postgresql_conn_connect_url;
+    postgresql->query       = postgresql_conn_add_query;
     postgresql->disconnect  = postgresql_conn_disconnect;
 
     /* Map API calls */

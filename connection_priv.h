@@ -54,6 +54,11 @@ postgresql_conn_t *postgresql_conn_connect(duda_request_t *dr, postgresql_connec
 postgresql_conn_t *postgresql_conn_connect_url(duda_request_t *dr, postgresql_connect_cb *cb,
                                                const char *url);
 
+int postgresql_conn_add_query(postgresql_conn_t *conn, const char *query_str,
+                              postgresql_query_result_cb *result_cb,
+                              postgresql_query_row_cb *row_cb,
+                              postgresql_query_end_cb *end_cb, void *privdata);
+
 void postgresql_conn_handle_release(postgresql_conn_t *conn, int status);
 
 void postgresql_conn_disconnect(postgresql_conn_t *conn, postgresql_disconnect_cb *cb);

@@ -153,6 +153,26 @@ postgresql_conn_t *postgresql_conn_connect_url(duda_request_t *dr, postgresql_co
     return conn;
 }
 
+int postgresql_conn_add_query(postgresql_conn_t *conn, const char *query_str,
+                              postgresql_query_result_cb *result_cb,
+                              postgresql_query_row_cb *row_cb,
+                              postgresql_query_end_cb *end_cb, void *privdata)
+{
+    postgresql_query_t *query = postgresql_query_init(query_str, result_cb, row_cb,
+                                                      end_cb, privdata);
+    if (!query) {
+        msg->err("[FD %i] PostgreSQL Add Query Error", conn->fd);
+        return POSTGRESQL_ERR;
+    }
+    mk_list_add(&query->_head, &conn->queries);
+
+    if (conn->state == CONN_STATE_CONNECTED) {
+        event->mode(conn->fd, DUDA_EVENT_WAKEUP, DUDA_EVENT_LEVEL_TRIGGERED);
+        postgresql_async_handle_query(conn);
+    }
+    return POSTGRESQL_OK;
+}
+
 void postgresql_conn_handle_release(postgresql_conn_t *conn, int status)
 {
     event->delete(conn->fd);
