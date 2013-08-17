@@ -48,8 +48,8 @@ struct postgresql_conn {
 };
 
 postgresql_conn_t *postgresql_conn_connect(duda_request_t *dr, postgresql_connect_cb *cb,
-                                           const char **keys, const char **values,
-                                           int expand_dbname);
+                                           const char * const *keys,
+                                           const char * const *values, int expand_dbname);
 
 postgresql_conn_t *postgresql_conn_connect_url(duda_request_t *dr, postgresql_connect_cb *cb,
                                                const char *url);

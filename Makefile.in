@@ -13,7 +13,7 @@ all: ../postgresql.dpkg
 -include $(OBJECTS:.o=.d)
 
 ../postgresql.dpkg: $(OBJECTS)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(DEFS) -shared -o $@ $^ -lc
+	$(CC) $(CFLAGS) $(LDFLAGS) $(DEFS) -shared -o $@ $^ -lc -lpq
 
 .c.o: $(SOURCES)
 	$(CC) $(CFLAGS) $(DEFS) -I$(INCDIR) -fPIC -c $<

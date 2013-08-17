@@ -115,14 +115,16 @@ static inline void __postgresql_conn_handle_connect(postgresql_conn_t *conn)
         postgresql_async_handle_query(conn);
     }
 
+    return;
+
 cleanup:
     PQfinish(conn->conn);
     FREE(conn);
 }
 
 postgresql_conn_t *postgresql_conn_connect(duda_request_t *dr, postgresql_connect_cb *cb,
-                                           const char **keys, const char **values,
-                                           int expand_dbname)
+                                           const char * const *keys,
+                                           const char * const *values, int expand_dbname)
 {
     postgresql_conn_t *conn = __postgresql_conn_create(dr, cb);
     if (!conn) {
