@@ -31,7 +31,9 @@
 #include <libpq-fe.h>
 #include "duda_package.h"
 #include "postgresql.h"
+#include "query_priv.h"
 #include "connection_priv.h"
+#include "util.h"
 
 postgresql_object_t *get_postgresql_api()
 {

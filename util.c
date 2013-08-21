@@ -21,6 +21,7 @@
 
 #include <libpq-fe.h>
 #include "common.h"
+#include "connection_priv.h"
 #include "util.h"
 
 char *postgresql_util_escape_literal(postgresql_conn_t *conn, const char *str,
@@ -48,7 +49,7 @@ unsigned char *postgresql_util_escape_binary(postgresql_conn_t *conn,
                                              size_t from_length,
                                              size_t *to_length)
 {
-    char escaped = PQescapeByteaConn(conn->conn, from, from_length, to_length);
+    unsigned char *escaped = PQescapeByteaConn(conn->conn, from, from_length, to_length);
     if (!escaped) {
         msg->err("[FD %i] PostgreSQL Escape Binary Error: %s", PQerrorMessage(conn->conn));
     }
