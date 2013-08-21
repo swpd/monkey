@@ -32,6 +32,12 @@ void postgresql_async_handle_query(postgresql_conn_t *conn)
         postgresql_query_t *query = mk_list_entry_first(&conn->queries,
                                                         postgresql_query_t, _head);
         conn->current_query = query;
+        if (query->abort) {
+            postgresql_query_free(query);
+            conn->state = CONN_STATE_CONNECTED;
+            continue;
+        }
+
         status = PQsendQuery(conn->conn, query->query_str);
         if (status != 1) {
             postgresql_query_free(query);
@@ -76,9 +82,23 @@ void postgresql_async_handle_query(postgresql_conn_t *conn)
 void postgresql_async_handle_row(postgresql_conn_t *conn)
 {
     int status, i, j;
+    int ret;
+    char errbuf[256]; /* use recommended buffer size */
     postgresql_query_t *query = conn->current_query;
 
     while (1) {
+        if (query->abort) {
+            PGcancel *cancel = PQgetCancel(conn->conn);
+            if (!cancel) {
+                msg->err("[FD %i] PostgreSQL Get Cancel Handle Error", conn->fd);
+            }
+            ret = PQcancel(cancel, errbuf, 256);
+            if (ret == 0) {
+                msg->err("[FD %i] PostgreSQL Cancel Error: %s", conn->fd, errbuf);
+            }
+            PQfreeCancel(cancel);
+        }
+
         status = PQconsumeInput(conn->conn);
         if (status == 0) {
             msg->err("[FD %i] PostgreSQL Consume Input Error: %s", conn->fd,
