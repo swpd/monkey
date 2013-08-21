@@ -40,10 +40,15 @@ postgresql_object_t *get_postgresql_api()
     /* Alloc PostgreSQL object */
     postgresql = monkey->mem_alloc(sizeof(postgresql_object_t));
 
-    postgresql->connect     = postgresql_conn_connect;
-    postgresql->connect_url = postgresql_conn_connect_url;
-    postgresql->query       = postgresql_conn_add_query;
-    postgresql->disconnect  = postgresql_conn_disconnect;
+    postgresql->connect           = postgresql_conn_connect;
+    postgresql->connect_url       = postgresql_conn_connect_url;
+    postgresql->query             = postgresql_conn_add_query;
+    postgresql->escape_literal    = postgresql_util_escape_literal;
+    postgresql->escape_identifier = postgresql_util_escape_identifier;
+    postgresql->escape_binary     = postgresql_util_escape_binary;
+    postgresql->unescape_binary   = postgresql_util_unescape_binary;
+    postgresql->abort             = postgresql_query_abort;
+    postgresql->disconnect        = postgresql_conn_disconnect;
 
     /* Map API calls */
 
