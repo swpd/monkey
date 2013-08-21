@@ -5,8 +5,8 @@ CFLAGS  = $CFLAGS
 LDFLAGS = $LDFLAGS
 DEFS    = $DEFS
 INCDIR  = ../../../../src/include -I../../src
-OBJECTS = duda_package.o postgresql.o connection.o query.o async.o
-SOURCES = duda_package.c postgresql.c connection.c query.c async.c
+OBJECTS = duda_package.o postgresql.o connection.o query.o async.o util.o
+SOURCES = duda_package.c postgresql.c connection.c query.c async.c util.c
 
 all: ../postgresql.dpkg
 
