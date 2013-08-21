@@ -36,6 +36,9 @@ postgresql_query_t *postgresql_query_init(const char *query_str,
     query->query_str       = monkey->str_dup(query_str);
     query->n_fields        = 0;
     query->fields          = NULL;
+    query->values          = NULL;
+    query->abort           = QUERY_ABORT_NO;
+    query->type            = QUERY_TYPE_NULL;
     query->single_row_mode = 0;
     query->result_start    = 0;
     query->result_cb       = result_cb;

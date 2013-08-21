@@ -24,13 +24,23 @@
 
 #include "query.h"
 
+typedef enum {
+    QUERY_TYPE_NULL, QUERY_TYPE_QUERY, QUERY_TYPE_PARAMS, QUERY_TYPE_PREPARED,
+} postgresql_query_type_t;
+
+typedef enum {
+    QUERY_ABORT_NO, QUERY_ABORT_YES,
+} postgresql_query_abort_t;
+
 struct postgresql_query {
     char *query_str;
     PGresult *result;
     int n_fields;
     char **fields;
     char **values;
+    postgresql_query_abort_t abort;
 
+    postgresql_query_type_t type;
     int single_row_mode;
     int result_start;
 
@@ -49,5 +59,10 @@ postgresql_query_t *postgresql_query_init(const char *query_str,
                                           void *privdata);
 
 void postgresql_query_free(postgresql_query_t *query);
+
+static inline void postgresql_query_abort(postgresql_query_t *query)
+{
+    query->abort = QUERY_ABORT_YES;
+}
 
 #endif
