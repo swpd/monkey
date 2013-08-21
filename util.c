@@ -21,6 +21,7 @@
 
 #include <libpq-fe.h>
 #include "common.h"
+#include "query.h"
 #include "connection_priv.h"
 #include "util.h"
 
