@@ -23,17 +23,14 @@
 #include "common.h"
 #include "query_priv.h"
 
-postgresql_query_t *postgresql_query_init(const char *query_str,
-                                          postgresql_query_result_cb *result_cb,
-                                          postgresql_query_row_cb *row_cb,
-                                          postgresql_query_end_cb *end_cb,
-                                          void *privdata)
+postgresql_query_t *postgresql_query_init()
 {
     postgresql_query_t *query = monkey->mem_alloc(sizeof(postgresql_query_t));
     if (!query) {
         return NULL;
     }
-    query->query_str       = monkey->str_dup(query_str);
+
+    query->query_str       = NULL;
     query->n_fields        = 0;
     query->fields          = NULL;
     query->values          = NULL;
@@ -41,10 +38,16 @@ postgresql_query_t *postgresql_query_init(const char *query_str,
     query->type            = QUERY_TYPE_NULL;
     query->single_row_mode = 0;
     query->result_start    = 0;
-    query->result_cb       = result_cb;
-    query->row_cb          = row_cb;
-    query->end_cb          = end_cb;
-    query->privdata        = privdata;
+    query->stmt_name       = NULL;
+    query->n_params        = 0;
+    query->params_values   = NULL;
+    query->parmas_lengths  = NULL;
+    qurey->params_formats  = NULL;
+    query->result_format   = 0;
+    query->result_cb       = NULL;
+    query->row_cb          = NULL;
+    query->end_cb          = NULL;
+    query->privdata        = NULL;
     query->result          = NULL;
     return query;
 }
@@ -53,10 +56,13 @@ void postgresql_query_free(postgresql_query_t *query)
 {
     mk_list_del(&query->_head);
     int i;
-    for (i = 0; i < query->n_fields; ++i) {
-        FREE(query->fields[i]);
-    }
-    FREE(query->fields);
     FREE(query->query_str);
+    FREE(query->stmt_name);
+    for (i = 0; i < query->n_params; ++i) {
+        FREE(query->params_values[i]);
+    }
+    FREE(query->params_values);
+    FREE(query->parmas_lengths);
+    FREE(query->params_formats);
     FREE(query);
 }

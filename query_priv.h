@@ -44,6 +44,14 @@ struct postgresql_query {
     int single_row_mode;
     int result_start;
 
+    /* fields used by query_params and query_prepared */
+    char *stmt_name;
+    int n_params;
+    char **params_values;
+    int *parmas_lengths;
+    int *params_formats; /* 0 for text, 1 for binary */
+    int result_format;
+
     postgresql_query_result_cb *result_cb;
     postgresql_query_row_cb *row_cb;
     postgresql_query_end_cb *end_cb;
@@ -52,11 +60,7 @@ struct postgresql_query {
     struct mk_list _head;
 };
 
-postgresql_query_t *postgresql_query_init(const char *query_str,
-                                          postgresql_query_result_cb *result_cb,
-                                          postgresql_query_row_cb *row_cb,
-                                          postgresql_query_end_cb *end_cb,
-                                          void *privdata);
+postgresql_query_t *postgresql_query_init();
 
 void postgresql_query_free(postgresql_query_t *query);
 
