@@ -54,10 +54,24 @@ postgresql_conn_t *postgresql_conn_connect(duda_request_t *dr, postgresql_connec
 postgresql_conn_t *postgresql_conn_connect_url(duda_request_t *dr, postgresql_connect_cb *cb,
                                                const char *url);
 
-int postgresql_conn_add_query(postgresql_conn_t *conn, const char *query_str,
-                              postgresql_query_result_cb *result_cb,
-                              postgresql_query_row_cb *row_cb,
-                              postgresql_query_end_cb *end_cb, void *privdata);
+int postgresql_conn_send_query(postgresql_conn_t *conn, const char *query_str,
+                               postgresql_query_result_cb *result_cb,
+                               postgresql_query_row_cb *row_cb,
+                               postgresql_query_end_cb *end_cb, void *privdata);
+
+int postgresql_conn_send_query_params(postgresql_conn_t *conn, const char *query_str,
+                                      int n_params, const char * const *params_values,
+                                      const int *params_lengths, const int *params_formats,
+                                      int result_format, postgresql_query_result_cb *result_cb,
+                                      postgresql_query_row_cb *row_cb,
+                                      postgresql_query_end_cb *end_cb, void *privdata);
+
+int postgresql_conn_send_query_prepared(postgresql_conn_t *conn, const char *stmt_name,
+                                         int n_params, const char * const *params_values,
+                                         const int *parmas_lengths, const int *parmas_formats,
+                                         int result_format, postgresql_query_result_cb *result_cb,
+                                         postgresql_query_row_cb *row_cb,
+                                         postgresql_query_end_cb *end_cb, void *privdata);
 
 void postgresql_conn_handle_release(postgresql_conn_t *conn, int status);
 

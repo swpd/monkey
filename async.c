@@ -38,7 +38,18 @@ void postgresql_async_handle_query(postgresql_conn_t *conn)
             continue;
         }
 
-        status = PQsendQuery(conn->conn, query->query_str);
+        if (query->type == QUERY_TYPE_QUERY) {
+            status = PQsendQuery(conn->conn, query->query_str);
+        } else if (query->type == QUERY_TYPE_PARAMS) {
+            status = PQsendQueryParams(conn->conn, conn->query_str, conn->n_params, NULL,
+                                       conn->params_values, conn->parmas_lengths,
+                                       conn->params_formats, conn->result_format);
+        } else if (query->type == QUERY_TYPE_PREPARED) {
+            status = PQsendQueryPrepared(conn->conn, conn->stmt_name, conn->n_params,
+                                         conn->params_values, conn->parmas_lengths,
+                                         conn->params_formats, conn->result_format);
+        }
+
         if (status != 1) {
             postgresql_query_free(query);
             continue;

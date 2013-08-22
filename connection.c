@@ -153,18 +153,130 @@ postgresql_conn_t *postgresql_conn_connect_url(duda_request_t *dr, postgresql_co
     return conn;
 }
 
-int postgresql_conn_add_query(postgresql_conn_t *conn, const char *query_str,
-                              postgresql_query_result_cb *result_cb,
-                              postgresql_query_row_cb *row_cb,
-                              postgresql_query_end_cb *end_cb, void *privdata)
+int postgresql_conn_send_query(postgresql_conn_t *conn, const char *query_str,
+                               postgresql_query_result_cb *result_cb,
+                               postgresql_query_row_cb *row_cb,
+                               postgresql_query_end_cb *end_cb, void *privdata)
 {
-    postgresql_query_t *query = postgresql_query_init(query_str, result_cb, row_cb,
-                                                      end_cb, privdata);
+    postgresql_query_t *query = postgresql_query_init();
     if (!query) {
         msg->err("[FD %i] PostgreSQL Add Query Error", conn->fd);
         return POSTGRESQL_ERR;
     }
     mk_list_add(&query->_head, &conn->queries);
+
+    query->query_str = monkey->str_dup(query_str);
+    query->result_cb = result_cb;
+    query->row_cb    = row_cb;
+    query->end_cb    = end_cb;
+    query->privdata  = privdata;
+    query->type      = QUERY_TYPE_QUERY;
+
+    if (conn->state == CONN_STATE_CONNECTED) {
+        event->mode(conn->fd, DUDA_EVENT_WAKEUP, DUDA_EVENT_LEVEL_TRIGGERED);
+        postgresql_async_handle_query(conn);
+    }
+    return POSTGRESQL_OK;
+}
+
+int postgresql_conn_send_query_params(postgresql_conn_t *conn, const char *query_str,
+                                      int n_params, const char * const *params_values,
+                                      const int *params_lengths, const int *params_formats,
+                                      int result_format, postgresql_query_result_cb *result_cb,
+                                      postgresql_query_row_cb *row_cb,
+                                      postgresql_query_end_cb *end_cb, void *privdata)
+{
+    postgresql_query_t *query = postgresql_query_init();
+    if (!query) {
+        msg->err("[FD %i] PostgreSQL Add Query Error", conn->fd);
+        return POSTGRESQL_ERR;
+    }
+    mk_list_add(&query->_head, &conn->queries);
+
+    int i;
+    query->query_str = monkey->str_dup(query_str);
+    query->n_params  = n_params;
+
+    if (params_values) {
+        query->params_values = monkey->mem_alloc(sizeof(char *) * n_params);
+        for (i = 0; i < n_params; ++i) {
+            query->params_values[i] = monkey->str_dup(params_values[i]);
+        }
+    }
+
+    if (params_lengths) {
+        query->parmas_lengths = monkey->mem_alloc(sizeof(int) * n_params);
+        for (i = 0; i < n_params; ++i) {
+            query->parmas_lengths[i] = parmas_lengths[i];
+        }
+    }
+
+    if (params_formats) {
+        query->parmas_formats = monkey->mem_alloc(sizeof(int) * n_params);
+        for (i = 0; i < n_params; ++i) {
+            query->parmas_formats[i] = parmas_formats[i];
+        }
+    }
+
+    query->result_format = result_format;
+    query->result_cb     = result_cb;
+    query->row_cb        = row_cb;
+    query->end_cb        = end_cb;
+    query->privdata      = privdata;
+    query->type          = QUERY_TYPE_PARAMS;
+
+    if (conn->state == CONN_STATE_CONNECTED) {
+        event->mode(conn->fd, DUDA_EVENT_WAKEUP, DUDA_EVENT_LEVEL_TRIGGERED);
+        postgresql_async_handle_query(conn);
+    }
+    return POSTGRESQL_OK;
+}
+
+int postgresql_conn_send_query_prepared(postgresql_conn_t *conn, const char *stmt_name,
+                                        int n_params, const char * const *params_values,
+                                        const int *parmas_lengths, const int *parmas_formats,
+                                        int result_format, postgresql_query_result_cb *result_cb,
+                                        postgresql_query_row_cb *row_cb,
+                                        postgresql_query_end_cb *end_cb, void *privdata)
+{
+    postgresql_query_t *query = postgresql_query_init();
+    if (!query) {
+        msg->err("[FD %i] PostgreSQL Add Query Error", conn->fd);
+        return POSTGRESQL_ERR;
+    }
+    mk_list_add(&query->_head, &conn->queries);
+
+    int i;
+    query->stmt_name = monkey->str_dup(stmt_name);
+    query->n_params  = n_params;
+
+    if (params_values) {
+        query->params_values = monkey->mem_alloc(sizeof(char *) * n_params);
+        for (i = 0; i < n_params; ++i) {
+            query->params_values[i] = monkey->str_dup(params_values[i]);
+        }
+    }
+
+    if (params_lengths) {
+        query->parmas_lengths = monkey->mem_alloc(sizeof(int) * n_params);
+        for (i = 0; i < n_params; ++i) {
+            query->parmas_lengths[i] = parmas_lengths[i];
+        }
+    }
+
+    if (params_formats) {
+        query->parmas_formats = monkey->mem_alloc(sizeof(int) * n_params);
+        for (i = 0; i < n_params; ++i) {
+            query->parmas_formats[i] = parmas_formats[i];
+        }
+    }
+
+    query->result_format = result_format;
+    query->result_cb     = result_cb;
+    query->row_cb        = row_cb;
+    query->end_cb        = end_cb;
+    query->privdata      = privdata;
+    query->type          = QUERY_TYPE_PREPARED;
 
     if (conn->state == CONN_STATE_CONNECTED) {
         event->mode(conn->fd, DUDA_EVENT_WAKEUP, DUDA_EVENT_LEVEL_TRIGGERED);

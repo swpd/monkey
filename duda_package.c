@@ -44,12 +44,15 @@ postgresql_object_t *get_postgresql_api()
 
     postgresql->connect           = postgresql_conn_connect;
     postgresql->connect_url       = postgresql_conn_connect_url;
-    postgresql->query             = postgresql_conn_add_query;
+    postgresql->query             = postgresql_conn_send_query;
+    postgresql->query_params      = postgresql_conn_send_query_params;
+    postgresql->query_prepared    = postgresql_conn_send_query_prepared;
     postgresql->escape_literal    = postgresql_util_escape_literal;
     postgresql->escape_identifier = postgresql_util_escape_identifier;
     postgresql->escape_binary     = postgresql_util_escape_binary;
     postgresql->unescape_binary   = postgresql_util_unescape_binary;
     postgresql->abort             = postgresql_query_abort;
+    postgresql->free              = postgresql_util_free;
     postgresql->disconnect        = postgresql_conn_disconnect;
 
     /* Map API calls */
