@@ -157,7 +157,7 @@ void postgresql_async_handle_row(postgresql_conn_t *conn)
                     }
                     FREE(query->fields);
                     query->n_fields = 0;
-                } else {
+                } else if (PQresultStatus(query->result) != PGRES_COMMAND_OK){
                     msg->err("[FD %i] PostgreSQL Get Result Error: %s", conn->fd,
                              PQerrorMessage(conn->conn));
                 }
@@ -202,7 +202,7 @@ void postgresql_async_handle_row(postgresql_conn_t *conn)
                     }
                     FREE(query->fields);
                     query->n_fields = 0;
-                } else {
+                } else if (PQresultStatus(query->result) != PGRES_COMMAND_OK){
                     msg->err("[FD %i] PostgreSQL Get Result Error: %s", conn->fd,
                              PQerrorMessage(conn->conn));
                 }
