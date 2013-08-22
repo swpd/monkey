@@ -39,7 +39,6 @@ typedef struct duda_api_postgresql {
                         const int *, const int *, int);
     int (*query_prepared)(postgresql_conn_t *, const char *, int, const char * const *,
                           const int *, const int *, int);
-    int (*prepare)(postgresql_conn_t *, const char *, const char *, int);
     char *(*escape_literal)(postgresql_conn_t *, const char *, size_t);
     char *(*escape_identifier)(postgresql_conn_t *, const char *, size_t);
     unsigned char *(*escape_binary)(postgresql_conn_t *, const unsigned char *,
