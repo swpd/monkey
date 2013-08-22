@@ -48,7 +48,7 @@ struct postgresql_query {
     char *stmt_name;
     int n_params;
     char **params_values;
-    int *parmas_lengths;
+    int *params_lengths;
     int *params_formats; /* 0 for text, 1 for binary */
     int result_format;
 

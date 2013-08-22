@@ -41,8 +41,8 @@ postgresql_query_t *postgresql_query_init()
     query->stmt_name       = NULL;
     query->n_params        = 0;
     query->params_values   = NULL;
-    query->parmas_lengths  = NULL;
-    qurey->params_formats  = NULL;
+    query->params_lengths  = NULL;
+    query->params_formats  = NULL;
     query->result_format   = 0;
     query->result_cb       = NULL;
     query->row_cb          = NULL;
@@ -62,7 +62,7 @@ void postgresql_query_free(postgresql_query_t *query)
         FREE(query->params_values[i]);
     }
     FREE(query->params_values);
-    FREE(query->parmas_lengths);
+    FREE(query->params_lengths);
     FREE(query->params_formats);
     FREE(query);
 }

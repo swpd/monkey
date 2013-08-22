@@ -41,13 +41,15 @@ void postgresql_async_handle_query(postgresql_conn_t *conn)
         if (query->type == QUERY_TYPE_QUERY) {
             status = PQsendQuery(conn->conn, query->query_str);
         } else if (query->type == QUERY_TYPE_PARAMS) {
-            status = PQsendQueryParams(conn->conn, conn->query_str, conn->n_params, NULL,
-                                       conn->params_values, conn->parmas_lengths,
-                                       conn->params_formats, conn->result_format);
+            status = PQsendQueryParams(conn->conn, query->query_str, query->n_params, NULL,
+                                       (const char * const *)query->params_values,
+                                       query->params_lengths, query->params_formats,
+                                       query->result_format);
         } else if (query->type == QUERY_TYPE_PREPARED) {
-            status = PQsendQueryPrepared(conn->conn, conn->stmt_name, conn->n_params,
-                                         conn->params_values, conn->parmas_lengths,
-                                         conn->params_formats, conn->result_format);
+            status = PQsendQueryPrepared(conn->conn, query->stmt_name, query->n_params,
+                                         (const char * const *)query->params_values,
+                                         query->params_lengths, query->params_formats,
+                                         query->result_format);
         }
 
         if (status != 1) {

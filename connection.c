@@ -205,16 +205,16 @@ int postgresql_conn_send_query_params(postgresql_conn_t *conn, const char *query
     }
 
     if (params_lengths) {
-        query->parmas_lengths = monkey->mem_alloc(sizeof(int) * n_params);
+        query->params_lengths = monkey->mem_alloc(sizeof(int) * n_params);
         for (i = 0; i < n_params; ++i) {
-            query->parmas_lengths[i] = parmas_lengths[i];
+            query->params_lengths[i] = params_lengths[i];
         }
     }
 
     if (params_formats) {
-        query->parmas_formats = monkey->mem_alloc(sizeof(int) * n_params);
+        query->params_formats = monkey->mem_alloc(sizeof(int) * n_params);
         for (i = 0; i < n_params; ++i) {
-            query->parmas_formats[i] = parmas_formats[i];
+            query->params_formats[i] = params_formats[i];
         }
     }
 
@@ -234,7 +234,7 @@ int postgresql_conn_send_query_params(postgresql_conn_t *conn, const char *query
 
 int postgresql_conn_send_query_prepared(postgresql_conn_t *conn, const char *stmt_name,
                                         int n_params, const char * const *params_values,
-                                        const int *parmas_lengths, const int *parmas_formats,
+                                        const int *params_lengths, const int *params_formats,
                                         int result_format, postgresql_query_result_cb *result_cb,
                                         postgresql_query_row_cb *row_cb,
                                         postgresql_query_end_cb *end_cb, void *privdata)
@@ -258,16 +258,16 @@ int postgresql_conn_send_query_prepared(postgresql_conn_t *conn, const char *stm
     }
 
     if (params_lengths) {
-        query->parmas_lengths = monkey->mem_alloc(sizeof(int) * n_params);
+        query->params_lengths = monkey->mem_alloc(sizeof(int) * n_params);
         for (i = 0; i < n_params; ++i) {
-            query->parmas_lengths[i] = parmas_lengths[i];
+            query->params_lengths[i] = params_lengths[i];
         }
     }
 
     if (params_formats) {
-        query->parmas_formats = monkey->mem_alloc(sizeof(int) * n_params);
+        query->params_formats = monkey->mem_alloc(sizeof(int) * n_params);
         for (i = 0; i < n_params; ++i) {
-            query->parmas_formats[i] = parmas_formats[i];
+            query->params_formats[i] = params_formats[i];
         }
     }
 
