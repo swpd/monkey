@@ -31,6 +31,8 @@ typedef enum {
     CONN_STATE_ROW_FETCHING, CONN_STATE_ROW_FETCHED,
 } postgresql_conn_state_t;
 
+struct postgresql_pool;
+
 struct postgresql_conn {
     struct duda_request *dr;
     PGconn *conn;
@@ -42,9 +44,12 @@ struct postgresql_conn {
 
     postgresql_query_t *current_query;
     int disconnect_on_finish;
+    int is_pooled;
+    struct postgresql_pool *pool;
 
     struct mk_list queries;
     struct mk_list _head;
+    struct mk_list _pool_head;
 };
 
 postgresql_conn_t *postgresql_conn_connect(duda_request_t *dr, postgresql_connect_cb *cb,

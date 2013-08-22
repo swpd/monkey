@@ -41,6 +41,8 @@ static inline postgresql_conn_t *__postgresql_conn_create(duda_request_t *dr,
     conn->current_query        = NULL;
     conn->state                = CONN_STATE_CLOSED;
     conn->disconnect_on_finish = 0;
+    conn->is_pooled            = 0;
+    conn->pool                 = NULL;
     mk_list_init(&conn->queries);
 
     return conn;
