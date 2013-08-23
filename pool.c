@@ -222,7 +222,7 @@ postgresql_conn_t *postgresql_pool_get_conn(duda_global_t *pool_key, duda_reques
         conn->connect_cb(conn, POSTGRESQL_OK, conn->dr);
     }
 
-    mk_list_del(&conn->_head);
+    mk_list_del(&conn->_pool_head);
     mk_list_add(&conn->_pool_head, &pool->busy_conns);
     pool->free_size--;
 
