@@ -34,6 +34,7 @@
 #include "query_priv.h"
 #include "connection_priv.h"
 #include "util.h"
+#include "pool.h"
 
 postgresql_object_t *get_postgresql_api()
 {
@@ -42,18 +43,21 @@ postgresql_object_t *get_postgresql_api()
     /* Alloc PostgreSQL object */
     postgresql = monkey->mem_alloc(sizeof(postgresql_object_t));
 
-    postgresql->connect           = postgresql_conn_connect;
-    postgresql->connect_url       = postgresql_conn_connect_url;
-    postgresql->query             = postgresql_conn_send_query;
-    postgresql->query_params      = postgresql_conn_send_query_params;
-    postgresql->query_prepared    = postgresql_conn_send_query_prepared;
-    postgresql->escape_literal    = postgresql_util_escape_literal;
-    postgresql->escape_identifier = postgresql_util_escape_identifier;
-    postgresql->escape_binary     = postgresql_util_escape_binary;
-    postgresql->unescape_binary   = postgresql_util_unescape_binary;
-    postgresql->abort             = postgresql_query_abort;
-    postgresql->free              = postgresql_util_free;
-    postgresql->disconnect        = postgresql_conn_disconnect;
+    postgresql->connect            = postgresql_conn_connect;
+    postgresql->connect_url        = postgresql_conn_connect_url;
+    postgresql->create_pool_params = postgresql_pool_params_create;
+    postgresql->create_pool_url    = postgresql_pool_url_create;
+    postgresql->get_conn           = postgresql_pool_get_conn;
+    postgresql->query              = postgresql_conn_send_query;
+    postgresql->query_params       = postgresql_conn_send_query_params;
+    postgresql->query_prepared     = postgresql_conn_send_query_prepared;
+    postgresql->escape_literal     = postgresql_util_escape_literal;
+    postgresql->escape_identifier  = postgresql_util_escape_identifier;
+    postgresql->escape_binary      = postgresql_util_escape_binary;
+    postgresql->unescape_binary    = postgresql_util_unescape_binary;
+    postgresql->abort              = postgresql_query_abort;
+    postgresql->free               = postgresql_util_free;
+    postgresql->disconnect         = postgresql_conn_disconnect;
 
     /* Map API calls */
 
