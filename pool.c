@@ -107,17 +107,19 @@ int postgresql_pool_params_create(duda_global_t *pool_key, int min_size, int max
     
     int i;
     if (keys) {
-        config->keys = monkey->mem_alloc(sizeof(char *) * length);
+        config->keys = monkey->mem_alloc(sizeof(char *) * (length + 1));
         for (i = 0; i < length; ++i) {
             config->keys[i] = monkey->str_dup(keys[i]);
         }
+        config->keys[length] = NULL;
     }
 
     if (values) {
-        config->values = monkey->mem_alloc(sizeof(char *) * length);
+        config->values = monkey->mem_alloc(sizeof(char *) * (length + 1));
         for (i = 0; i < length; ++i) {
             config->values[i] = monkey->str_dup(values[i]);
         }
+        config->values[length] = NULL;
     }
 
     config->expand_dbname = expand_dbname;
