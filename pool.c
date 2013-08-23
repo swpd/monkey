@@ -21,6 +21,7 @@
 
 #include <libpq-fe.h>
 #include "common.h"
+#include "query.h"
 #include "connection_priv.h"
 #include "pool.h"
 
@@ -32,9 +33,10 @@ static inline int __postgresql_pool_spawn_conn(postgresql_pool_t *pool, int size
 
     for (i = 0; i < size; ++i) {
         if (config->type == POOL_TYPE_PARAMS) {
-            conn = postgresql_conn_connect(NULL, NULL, config->keys, config->values,
+            conn = postgresql_conn_connect(NULL, NULL, (const char * const *)config->keys,
+                                           (const char * const *)config->values,
                                            config->expand_dbname);
-        } else if (pool->type == POOL_TYPE_URL) {
+        } else if (config->type == POOL_TYPE_URL) {
             conn = postgresql_conn_connect_url(NULL, NULL, config->url);
         }
 
@@ -97,8 +99,8 @@ int postgresql_pool_params_create(duda_global_t *pool_key, int min_size, int max
 
     config->pool_key = pool_key;
     int length = 0;
-    const char * const *ptr = *keys;
-    while (ptr != NULL) {
+    const char * const *ptr = keys;
+    while (*ptr != NULL) {
         length++;
         ptr++;
     }
@@ -199,10 +201,11 @@ postgresql_conn_t *postgresql_pool_get_conn(duda_global_t *pool_key, duda_reques
             }
         } else {
             if (config->type == POOL_TYPE_PARAMS) {
-                conn = postgresql_conn_connect(dr, connect_cb, config->keys,
-                                               config->values, config->expand_dbname);
-            } else if (pool->type == POOL_TYPE_URL) {
-                conn = postgresql_conn_connect_url(dr, connect_cb, config->url);
+                conn = postgresql_conn_connect(dr, cb, (const char * const *)config->keys,
+                                               (const char * const *)config->values,
+                                               config->expand_dbname);
+            } else if (config->type == POOL_TYPE_URL) {
+                conn = postgresql_conn_connect_url(dr, cb, config->url);
             }
             
             return conn;
@@ -217,7 +220,7 @@ postgresql_conn_t *postgresql_pool_get_conn(duda_global_t *pool_key, duda_reques
         conn->connect_cb(conn, POSTGRESQL_OK, conn->dr);
     }
 
-    mk_list_del(&conn->_headn);
+    mk_list_del(&conn->_head);
     mk_list_add(&conn->_pool_head, &pool->busy_conns);
     pool->free_size--;
 

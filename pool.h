@@ -32,6 +32,8 @@ typedef enum {
 
 typedef struct postgresql_pool_config {
     postgresql_pool_type_t type;
+    duda_global_t *pool_key;
+
     int min_size;
     int max_size;
 
