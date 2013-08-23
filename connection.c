@@ -24,6 +24,7 @@
 #include "query_priv.h"
 #include "connection_priv.h"
 #include "async.h"
+#include "pool.h"
 
 static inline postgresql_conn_t *__postgresql_conn_create(duda_request_t *dr,
                                                           postgresql_connect_cb *cb)
@@ -289,19 +290,27 @@ int postgresql_conn_send_query_prepared(postgresql_conn_t *conn, const char *stm
 
 void postgresql_conn_handle_release(postgresql_conn_t *conn, int status)
 {
-    event->delete(conn->fd);
+    if (conn->is_pooled) {
+        event->mode(conn->fd, DUDA_EVENT_SLEEP, DUDA_EVENT_LEVEL_TRIGGERED);
+    } else {
+        event->delete(conn->fd);
+    }
     if (conn->disconnect_cb) {
         conn->disconnect_cb(conn, status, conn->dr);
     }
-    conn->state = CONN_STATE_CLOSED;
-    mk_list_del(&conn->_head);
-    PQfinish(conn->conn);
-    while (mk_list_is_empty(&conn->queries) != 0) {
-        postgresql_query_t *query = mk_list_entry_first(&conn->queries,
-                                                        postgresql_query_t, _head);
-        postgresql_query_free(query);
+    if (conn->is_pooled) {
+        postgresql_pool_reclaim_conn(conn);
+    } else {
+        conn->state = CONN_STATE_CLOSED;
+        mk_list_del(&conn->_head);
+        PQfinish(conn->conn);
+        while (mk_list_is_empty(&conn->queries) != 0) {
+            postgresql_query_t *query = mk_list_entry_first(&conn->queries,
+                                                            postgresql_query_t, _head);
+            postgresql_query_free(query);
+        }
+        FREE(conn);
     }
-    FREE(conn);
 }
 
 void postgresql_conn_disconnect(postgresql_conn_t *conn, postgresql_disconnect_cb *cb)
