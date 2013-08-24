@@ -28,7 +28,7 @@ static inline void print_header(duda_request_t *dr)
       <a href=\"#\" class=\"navbar-brand\">MariaDB Package</a>\
       <ul class=\"nav navbar-nav\">\
         <li id=\"home\">\
-          <a href=\"/mariadb_demo/mariadb/\">Home</a>\
+          <a href=\"/mariadb_demo/mariadb/home/\">Home</a>\
         </li>\
         <li id=\"dashboard\">\
           <a href=\"/mariadb_demo/mariadb/dashboard/\">Dashboard</a>\
@@ -344,8 +344,10 @@ int duda_main()
     mariadb->create_pool(&demo_pool, 0, 0, "user", "passwd", "localhost", NULL,
                          0, NULL, 0);
 
-    map->static_add("/mariadb/", "cb_home_page");
     if_system = map->interface_new("mariadb");
+
+    method = map->method_new("home", "cb_home_page", 0);
+    map->interface_add_method(method, if_system);
 
     method = map->method_new("dashboard", "cb_dashboard", 0);
     map->interface_add_method(method, if_system);
