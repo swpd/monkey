@@ -232,7 +232,7 @@ mariadb_conn_t *mariadb_pool_get_conn(duda_global_t *pool_key, duda_request_t *d
                 return NULL;
             }
 
-            ret = mariadb_async_handle_connect(conn, NULL);
+            ret = mariadb_async_handle_connect(conn, connect_cb);
             if (ret != MARIADB_OK) {
                 return NULL;
             }
@@ -243,6 +243,10 @@ mariadb_conn_t *mariadb_pool_get_conn(duda_global_t *pool_key, duda_request_t *d
     conn = mk_list_entry_first(&pool->free_conns, mariadb_conn_t, _pool_head);
     conn->dr = dr;
     conn->connect_cb = cb;
+
+    if (conn->connect_cb) {
+        conn->connect_cb(conn, MARIADB_OK, conn->dr);
+    }
 
     mk_list_del(&conn->_pool_head);
     mk_list_add(&conn->_pool_head, &pool->busy_conns);
