@@ -21,6 +21,7 @@
 
 #define _GNU_SOURCE
 #include <dlfcn.h>
+#include <sys/eventfd.h>
 
 #include "MKPlugin.h"
 #include "duda.h"
@@ -75,6 +76,9 @@ duda_request_t *duda_dr_list_get(int socket)
     duda_request_t *dr;
 
     root = pthread_getspecific(duda_global_dr_list);
+    if (!root) {
+        return NULL;
+    }
 
   	struct rb_node *node = root->rb_node;
   	while (node) {
@@ -158,6 +162,7 @@ int duda_service_register(struct duda_api_objects *api, struct web_service *ws)
         ws->packages = duda_load_symbol(ws->handler, "duda_ws_packages");
         ws->workers  = duda_load_symbol(ws->handler, "duda_worker_list");
         ws->loggers  = duda_load_symbol(ws->handler, "duda_logger_main_list");
+        ws->setup    = duda_load_symbol(ws->handler, "_setup");
 
         /* Lookup mapped callbacks */
         mk_list_foreach(head_urls, ws->map_urls) {
@@ -383,6 +388,7 @@ int _mkp_event_timeout(int sockfd)
 /* Thread context initialization */
 void _mkp_core_thctx()
 {
+    int event_fd;
     char *logger_fmt_cache;
     struct mk_list *head_vs, *head_ws, *head_gl;
     struct mk_list *list_events_write;
@@ -390,8 +396,10 @@ void _mkp_core_thctx()
     struct rb_root *dr_list;
     struct vhost_services *entry_vs;
     struct web_service *entry_ws;
+    struct duda_event_signal_channel *esc;
     duda_global_t *entry_gl;
     void *data;
+
 
     /* Events write list */
     list_events_write = mk_api->mem_alloc(sizeof(struct mk_list));
@@ -403,13 +411,28 @@ void _mkp_core_thctx()
     mk_list_init(events_list);
     pthread_setspecific(duda_events_list, (void *) events_list);
 
-    /* List of all duda_request_t alive */
+     /* List of all duda_request_t alive */
     dr_list = mk_api->mem_alloc_z(sizeof(struct rb_root));
     pthread_setspecific(duda_global_dr_list, (void *) dr_list);
 
     /* Logger FMT cache */
     logger_fmt_cache = mk_api->mem_alloc(512);
     pthread_setspecific(duda_logger_fmt_cache, (void *) logger_fmt_cache);
+
+   /* Register a Linux eventfd into the Events interface */
+    event_fd = eventfd(0, 0);
+    mk_api->socket_set_nonblocking(event_fd);
+    esc = mk_api->mem_alloc(sizeof(struct duda_event_signal_channel));
+    esc->fd = event_fd;
+
+    /* Safe initialization */
+    pthread_mutex_lock(&duda_mutex_thctx);
+    mk_list_add(&esc->_head, &duda_event_signals_list);
+    pthread_mutex_unlock(&duda_mutex_thctx);
+
+    /* Register the event file descriptor in the events interface */
+    duda_event_add(event_fd, DUDA_EVENT_READ, DUDA_EVENT_LEVEL_TRIGGERED,
+                   duda_event_fd_read, NULL, NULL, NULL, NULL, NULL);
 
     /*
      * Load global data if applies, this is toooo recursive, we need to go through
@@ -493,6 +516,9 @@ int _mkp_core_prctx(struct server_config *config)
         }
     }
 
+
+    /* Initialize Mutex, just for start up routines, no runtime stuff */
+    pthread_mutex_init(&duda_mutex_thctx, (pthread_mutexattr_t *) NULL);
     return 0;
 }
 
@@ -509,6 +535,8 @@ int _mkp_init(struct plugin_api **api, char *confdir)
     pthread_key_create(&duda_events_list, NULL);
     pthread_key_create(&duda_global_events_write, NULL);
     pthread_key_create(&duda_global_dr_list, NULL);
+
+    mk_list_init(&duda_event_signals_list);
 
     /* Initialize Logger internals */
     duda_logger_init();
@@ -683,8 +711,8 @@ int duda_override_docroot(struct session_request *sr, int uri_offset, char *path
     new_path_len = (sr->uri_processed.len + len);
 
     /*
-     * Is the new path length minor than MK_PATH_BASE ?, sr->real_path_static have a length
-     * of MK_PATH_BASE
+     * Is the new path length minor than MK_PATH_BASE ?, sr->real_path_static
+     * have a length of MK_PATH_BASE
      */
     if (new_path_len < MK_PATH_BASE) {
         if (sr->real_path.data != sr->real_path_static) {
@@ -747,7 +775,6 @@ int duda_service_html(duda_request_t *dr)
     ret = duda_override_docroot(sr, dr->ws_root->name.len + 1,
                                 dr->ws_root->docroot.data,
                                 dr->ws_root->docroot.len);
-
     return ret;
 }
 
@@ -803,14 +830,15 @@ int duda_service_run(struct plugin *plugin,
 
     /* Parse request for 'Duda Map' format */
     if ((duda_request_parse(sr, dr) != 0) || (!dr->_method)) {
-        /* Static Content file */
-        if (duda_service_html(dr) == 0) {
-            return -1;
-        }
 
         /* Static Map */
         if (duda_map_static_check(dr) == 0) {
             return 0;
+        }
+
+        /* Static Content file */
+        if (duda_service_html(dr) == 0) {
+            return -1;
         }
     }
     else {
