@@ -57,4 +57,4 @@ run the server:
 ### Serving Requests ###
 use your favorite client to visit the following URL to access this web service:
 
-    http://localhost:2001/mariadb_demo/mariadb/
+    http://localhost:2001/mariadb_demo/mariadb/home/
