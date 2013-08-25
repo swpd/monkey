@@ -12,7 +12,7 @@ static inline void print_header(duda_request_t *dr)
 <head>\
   <meta charset=\"UTF-8\">\
   <title>PostgreSQL Package Demo</title>\
-  <link rel=\"stylesheet\" href=\"//netdna.bootstrapcdn.com/bootstrap/3.0.0-rc1/css/bootstrap.min.css\">\
+  <link rel=\"stylesheet\" href=\"//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css\">\
   <style type=\"text/css\">\
     body {\
       position: relative;\
@@ -40,7 +40,7 @@ static inline void print_footer(duda_request_t *dr, const char *js)
 {
     response->printf(dr, "\
   <script src=\"//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js\"></script>\
-  <script src=\"//netdna.bootstrapcdn.com/bootstrap/3.0.0-rc1/js/bootstrap.min.js\"></script>");
+  <script src=\"//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js\"></script>");
     if (js) {
         response->printf(dr, js);
     }
