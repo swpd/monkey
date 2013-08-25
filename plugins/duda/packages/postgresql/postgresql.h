@@ -31,11 +31,11 @@ duda_global_t postgresql_conn_list;
 typedef struct duda_api_postgresql {
     postgresql_conn_t *(*connect)(duda_request_t *, postgresql_connect_cb *,
                                   const char * const *, const char * const *, int);
-    postgresql_conn_t *(*connect_url)(duda_request_t *, postgresql_connect_cb *,
+    postgresql_conn_t *(*connect_uri)(duda_request_t *, postgresql_connect_cb *,
                                      const char *);
     int (*create_pool_params)(duda_global_t *, int , int , const char * const *,
                               const char * const *, int);
-    int (*create_pool_url)(duda_global_t *, int , int , const char *);
+    int (*create_pool_uri)(duda_global_t *, int , int , const char *);
     postgresql_conn_t *(*get_conn)(duda_global_t *, duda_request_t *,
                                    postgresql_connect_cb *);
     int (*query)(postgresql_conn_t *, const char *, postgresql_query_result_cb *,

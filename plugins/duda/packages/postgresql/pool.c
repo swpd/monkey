@@ -36,8 +36,8 @@ static inline int __postgresql_pool_spawn_conn(postgresql_pool_t *pool, int size
             conn = postgresql_conn_connect(NULL, NULL, (const char * const *)config->keys,
                                            (const char * const *)config->values,
                                            config->expand_dbname);
-        } else if (config->type == POOL_TYPE_URL) {
-            conn = postgresql_conn_connect_url(NULL, NULL, config->url);
+        } else if (config->type == POOL_TYPE_URI) {
+            conn = postgresql_conn_connect_uri(NULL, NULL, config->uri);
         }
 
         if (!conn) {
@@ -140,8 +140,8 @@ int postgresql_pool_params_create(duda_global_t *pool_key, int min_size, int max
     return POSTGRESQL_OK;
 }
 
-int postgresql_pool_url_create(duda_global_t *pool_key, int min_size, int max_size,
-                               const char *url)
+int postgresql_pool_uri_create(duda_global_t *pool_key, int min_size, int max_size,
+                               const char *uri)
 {
     postgresql_pool_config_t *config = monkey->mem_alloc(sizeof(postgresql_pool_config_t));
     if (!config) {
@@ -149,7 +149,7 @@ int postgresql_pool_url_create(duda_global_t *pool_key, int min_size, int max_si
     }
 
     config->pool_key = pool_key;
-    config->url = monkey->str_dup(url);
+    config->uri = monkey->str_dup(uri);
 
     if (min_size == 0) {
         config->min_size = POSTGRESQL_POOL_DEFAULT_MIN_SIZE;
@@ -162,7 +162,7 @@ int postgresql_pool_url_create(duda_global_t *pool_key, int min_size, int max_si
         config->max_size = max_size;
     }
 
-    config->type = POOL_TYPE_URL;
+    config->type = POOL_TYPE_URI;
     mk_list_add(&config->_head, &postgresql_pool_config_list);
     return POSTGRESQL_OK;
 }
@@ -206,8 +206,8 @@ postgresql_conn_t *postgresql_pool_get_conn(duda_global_t *pool_key, duda_reques
                 conn = postgresql_conn_connect(dr, cb, (const char * const *)config->keys,
                                                (const char * const *)config->values,
                                                config->expand_dbname);
-            } else if (config->type == POOL_TYPE_URL) {
-                conn = postgresql_conn_connect_url(dr, cb, config->url);
+            } else if (config->type == POOL_TYPE_URI) {
+                conn = postgresql_conn_connect_uri(dr, cb, config->uri);
             }
             
             return conn;

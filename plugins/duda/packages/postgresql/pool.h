@@ -27,7 +27,7 @@
 #define POSTGRESQL_POOL_DEFAULT_MAX_SIZE 4
 
 typedef enum {
-    POOL_TYPE_PARAMS, POOL_TYPE_URL,
+    POOL_TYPE_PARAMS, POOL_TYPE_URI,
 } postgresql_pool_type_t;
 
 typedef struct postgresql_pool_config {
@@ -41,7 +41,7 @@ typedef struct postgresql_pool_config {
     char **values;
     int expand_dbname;
 
-    char *url;
+    char *uri;
 
     struct mk_list _head;
 } postgresql_pool_config_t;
@@ -61,8 +61,8 @@ int postgresql_pool_params_create(duda_global_t *pool_key, int min_size, int max
                                   const char * const *keys, const char * const *values,
                                   int expand_dbname);
 
-int postgresql_pool_url_create(duda_global_t *pool_key, int min_size, int max_size,
-                               const char *url);
+int postgresql_pool_uri_create(duda_global_t *pool_key, int min_size, int max_size,
+                               const char *uri);
 
 postgresql_conn_t *postgresql_pool_get_conn(duda_global_t *pool_key, duda_request_t *dr,
                                             postgresql_connect_cb *cb);
