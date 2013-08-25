@@ -44,9 +44,9 @@ postgresql_object_t *get_postgresql_api()
     postgresql = monkey->mem_alloc(sizeof(postgresql_object_t));
 
     postgresql->connect            = postgresql_conn_connect;
-    postgresql->connect_url        = postgresql_conn_connect_url;
+    postgresql->connect_uri        = postgresql_conn_connect_uri;
     postgresql->create_pool_params = postgresql_pool_params_create;
-    postgresql->create_pool_url    = postgresql_pool_url_create;
+    postgresql->create_pool_uri    = postgresql_pool_uri_create;
     postgresql->get_conn           = postgresql_pool_get_conn;
     postgresql->query              = postgresql_conn_send_query;
     postgresql->query_params       = postgresql_conn_send_query_params;

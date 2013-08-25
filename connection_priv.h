@@ -56,8 +56,8 @@ postgresql_conn_t *postgresql_conn_connect(duda_request_t *dr, postgresql_connec
                                            const char * const *keys,
                                            const char * const *values, int expand_dbname);
 
-postgresql_conn_t *postgresql_conn_connect_url(duda_request_t *dr, postgresql_connect_cb *cb,
-                                               const char *url);
+postgresql_conn_t *postgresql_conn_connect_uri(duda_request_t *dr, postgresql_connect_cb *cb,
+                                               const char *uri);
 
 int postgresql_conn_send_query(postgresql_conn_t *conn, const char *query_str,
                                postgresql_query_result_cb *result_cb,

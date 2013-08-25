@@ -141,15 +141,15 @@ postgresql_conn_t *postgresql_conn_connect(duda_request_t *dr, postgresql_connec
     return conn;
 }
 
-postgresql_conn_t *postgresql_conn_connect_url(duda_request_t *dr, postgresql_connect_cb *cb,
-                                               const char *url)
+postgresql_conn_t *postgresql_conn_connect_uri(duda_request_t *dr, postgresql_connect_cb *cb,
+                                               const char *uri)
 {
     postgresql_conn_t *conn = __postgresql_conn_create(dr, cb);
     if (!conn) {
         return NULL;
     }
 
-    conn->conn = PQconnectStart(url);
+    conn->conn = PQconnectStart(uri);
 
     __postgresql_conn_handle_connect(conn);
 
