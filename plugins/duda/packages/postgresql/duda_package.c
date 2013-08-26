@@ -43,6 +43,8 @@ postgresql_object_t *get_postgresql_api()
     /* Alloc PostgreSQL object */
     postgresql = monkey->mem_alloc(sizeof(postgresql_object_t));
 
+    /* Map API calls */
+
     postgresql->connect            = postgresql_conn_connect;
     postgresql->connect_uri        = postgresql_conn_connect_uri;
     postgresql->create_pool_params = postgresql_pool_params_create;
@@ -58,8 +60,6 @@ postgresql_object_t *get_postgresql_api()
     postgresql->abort              = postgresql_query_abort;
     postgresql->free               = postgresql_util_free;
     postgresql->disconnect         = postgresql_conn_disconnect;
-
-    /* Map API calls */
 
     return postgresql;
 }
