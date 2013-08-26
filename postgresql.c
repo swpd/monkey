@@ -130,6 +130,14 @@ int postgresql_on_error(int fd, void *data)
 {
     (void) data;
     msg->info("[FD %i] PostgreSQL Connection Handler / error", fd);
+    postgresql_conn_t *conn = __postgresql_get_conn(fd);
+
+    if (!conn) {
+        msg->err("[FD %i] Error: PostgreSQL Connection Not Found", fd);
+        return DUDA_EVENT_CLOSE;
+    }
+    conn->is_pooled = 0;
+    postgresql_conn_handle_release(conn, POSTGRESQL_ERR);
     return DUDA_EVENT_OWNED;
 }
 
@@ -137,6 +145,13 @@ int postgresql_on_close(int fd, void *data)
 {
     (void) data;
     msg->info("[FD %i] PostgreSQL Connection Handler / close", fd);
+    postgresql_conn_t *conn = __postgresql_get_conn(fd);
+
+    if (!conn) {
+        msg->err("[FD %i] Error: PostgreSQL Connection Not Found", fd);
+    }
+    conn->is_pooled = 0;
+    postgresql_conn_handle_release(conn, POSTGRESQL_ERR);
     return DUDA_EVENT_CLOSE;
 }
 
