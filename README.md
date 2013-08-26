@@ -219,7 +219,7 @@ We can issue queries once we get a MariaDB connection from the package, the quer
 will be enqueued into that connection and be processed one by one:
 
     mariadb->query(conn, "SHOW databases", on_result_available_callback,
-                   on_row_callback, NULL, on_finish_processing_callback);
+                   on_row_callback, on_finish_processing_callback, NULL);
 
 ### Escape Query String ###
 We may need to escape a query string to make sure that all the special characters
@@ -235,7 +235,7 @@ for the null byte.
 
 ### Abort Query ###
 A query can be aborted while it is being processed, if abort takes actions before
-the query hasn't been passed to the server, it is simply dropped, otherwise the
+the query has been passed to the server, it is simply dropped, otherwise the
 result set of this query will be freed and the query comes to the end of its life:
     
     mariadb->abort(query);
