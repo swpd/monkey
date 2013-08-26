@@ -91,7 +91,7 @@ service:
 There are two methods you may use to establish a connection to your PostgreSQL
 server:
 
-`postgresql->connect`:
+#### connect: ####
     
     void some_request_callback(duda_request_t *dr)
     {
@@ -125,7 +125,7 @@ server:
         /* issue some queries or other stuffs to the connection */
     }
 
-`postgresql->connect_uri`:
+#### connect_uri: ####
 
     void some_request_callback(duda_request_t *dr)
     {
@@ -178,7 +178,7 @@ service, and initialize it in `duda_main()`.
 Just like there are two ways to establish a connection, the `postgresql` package
 offers you two ways to create a connection pool:
 
-`create_pool_params`:
+#### create_pool_params: ####
 
     duda_global_t some_pool;
 
@@ -204,7 +204,7 @@ offers you two ways to create a connection pool:
         ...
     }
 
-`create_pool_uri`:
+#### create_pool_uri: ####
 
     duda_global_t some_pool;
 
@@ -248,12 +248,12 @@ will be enqueued into that connection and be processed one by one.
 
 As always, we got variant methods to send a query to the PostgreSQL server.
 
-`query`:
+#### query: ####
 
     postgresql->query(conn, "SELECT * FROM demo", on_result_available_callback,
                       on_row_callback, on_finish_processing_callback, NULL);
 
-`query_params`:
+#### query_params: ####
     
 This method got a long list of parameters. For the meaning of parameter you can
 either refer to the [official documentation](http://www.postgresql.org/docs/9.2/static/libpq-exec.html)
@@ -268,7 +268,7 @@ of PostgreSQL or the full APIs [reference](#api-documentation) of this package.
                              on_result_available_callback, on_row_callback,
                              on_finish_processing_callback, NULL);
 
-`query_prepared`:
+#### query_prepared: ####
 
 This method shall be used to send a request to execute prepared statments that have
 been submitted to the PostgreSQL server. Remember to use one of the two methods
@@ -299,7 +299,7 @@ do proper escaping when handling strings received from untrustworthy source.
 
 There are 4 methods related to string escape in the postgresql package:
 
-`escape_literal`:
+#### escape_literal: ####
     
 This method escapes a string for use within an SQL command.
 
@@ -310,7 +310,7 @@ This method escapes a string for use within an SQL command.
     postgresql->free(escaped_query); /* remember to free the dynamic allocated memory */
     ...
 
-`escape_identifier`:
+#### escape_identifier: ####
 
 This method escapes a string for use as an SQL identifier, such as a table, column,
 or function name.
@@ -318,7 +318,7 @@ or function name.
     const char *table_name = "demo_table";
     char *escaped_table_name = postgresql->escape_identifier(conn, table_name, strlen(table_name));
 
-`escape_binary`:
+#### escape_binary: ####
 
 Thie method escapes binary data for use within an SQL command.
 
@@ -327,7 +327,7 @@ Thie method escapes binary data for use within an SQL command.
     unsigned char *escaped_binary_data = postgresql->escape_binary(conn, binary_data, n, &to_length);
     ...
 
-`unescape_binary`:
+#### unescape_binary: ####
 
 This method converts a string representation of binary data into binary data.
 
