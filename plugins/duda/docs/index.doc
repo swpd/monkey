@@ -22,3 +22,4 @@ packages/sha1
 packages/sha256
 packages/sqlite
 packages/websocket
+packages/postgresql
