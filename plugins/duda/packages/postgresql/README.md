@@ -92,7 +92,7 @@ There are two methods you may use to establish a connection to your PostgreSQL
 server:
 
 #### connect: ####
-    
+
     void some_request_callback(duda_request_t *dr)
     {
         const char *keys[] = {
@@ -155,7 +155,6 @@ Terminating a connection is done as follows:
         postgresql->disconnect(conn, on_disconnect_callback);
         ...
     }
-    
 
 Notice: `postgresql->disconnect` doesn't close the connection immediately if the
 connection still have some pending queries to process, it just notify the
@@ -216,7 +215,7 @@ offers you two ways to create a connection pool:
         postgresql->create_pool_uri(&some_pool, 0, 0, "user=postgres password=foo dbname=test");
         ...
     }
-    
+
 When a duda request claims for a connection, we can borrow one from the pool:
 
     void some_request_callback(duda_request_t* dr)
@@ -254,7 +253,7 @@ As always, we got variant methods to send a query to the PostgreSQL server.
                       on_row_callback, on_finish_processing_callback, NULL);
 
 #### query_params: ####
-    
+
 This method got a long list of parameters. For the meaning of parameter you can
 either refer to the [official documentation](http://www.postgresql.org/docs/9.2/static/libpq-exec.html)
 of PostgreSQL or the full APIs [reference](#api-documentation) of this package.
@@ -279,7 +278,6 @@ described above to send a prepared statements before you call this method.
                       INSERT INTO demo VALUES($1, $2)", on_result_available_callback,
                       on_row_callback, on_finish_processing_callback, NULL);
 
-    
     const char *vals[] = {"1", "username"};
     postgresql->query_prepared(conn, "stmt_name", 2, vals, NULL, NULL, 0,
                                on_result_available_callback, on_row_callback,
@@ -300,7 +298,7 @@ do proper escaping when handling strings received from untrustworthy source.
 There are 4 methods related to string escape in the postgresql package:
 
 #### escape_literal: ####
-    
+
 This method escapes a string for use within an SQL command.
 
     const char *query = "SELECT * FROM demo";
@@ -340,7 +338,7 @@ This method converts a string representation of binary data into binary data.
 A query can be aborted while it is being processed, if abort takes actions before
 the query has been passed to the server, it is simply dropped, otherwise a cancel
 request will be sent to the server and the current query will be terminated.
-    
+
     postgresql->abort(query);
 
 ### API Documentation ###
