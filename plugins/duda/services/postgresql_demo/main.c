@@ -216,7 +216,7 @@ void cb_home_page(duda_request_t* dr)
         If you're interested in the package itself, please refer to\
         <a href=\"https://github.com/swpd/duda_postgresql\">this</a>.\
       </p>\
-      <p><a class=\"btn btn-primary btn-large\" href=\"/postgresql_demo/postgresql/dashboard/\">Get Started »</a></p>\
+      <p><a class=\"btn btn-primary btn-lg\" href=\"/postgresql_demo/postgresql/dashboard/\">Get Started »</a></p>\
     </div>\
   </div>");
 
@@ -237,36 +237,38 @@ void cb_dashboard(duda_request_t *dr)
     print_header(dr);
     response->printf(dr, "\
   <div class=\"container\">\
-    <div class=\"panel\">\
+    <div class=\"panel panel-default\">\
       <div class=\"panel-heading\">\
         <h4 class=\"panel-title\">Dashboard</h4>\
       </div>\
-      <div class=\"row\">\
-        <div class=\"col-lg-4\">\
-          <form class=\"form-inline\">\
-            <label>choose a database:</label>\
-            <div class=\"btn-group\">\
-              <button id=\"current-db\" type=\"button\" class=\"btn btn-default\"></button>\
-              <button type=\"button\" class=\"btn btn-default dropdown-toggle\" data-toggle=\"dropdown\">\
-                <span class=\"caret\"></span>\
-              </button>\
-              <ul id=\"db-list\" class=\"dropdown-menu\">\
-              </ul>\
-            </div>\
-          </form>\
-        </div>\
-        <div class=\"col-lg-4\">\
-          <form class=\"form-inline\">\
-            <label>choose a table:</label>\
-            <div class=\"btn-group\">\
-              <button id=\"current-tb\" type=\"button\" class=\"btn btn-default\"></button>\
-              <button type=\"button\" class=\"btn btn-default dropdown-toggle\" data-toggle=\"dropdown\">\
-                <span class=\"caret\"></span>\
-              </button>\
-              <ul id=\"tb-list\" class=\"dropdown-menu\">\
-              </ul>\
-            </div>\
-          </form>\
+      <div class=\"panel-body\">\
+        <div class=\"row\">\
+          <div class=\"col-lg-4\">\
+            <form class=\"form-inline\">\
+              <label>choose a database:</label>\
+              <div class=\"btn-group\">\
+                <button id=\"current-db\" type=\"button\" class=\"btn btn-default\"></button>\
+                <button type=\"button\" class=\"btn btn-default dropdown-toggle\" data-toggle=\"dropdown\">\
+                  <span class=\"caret\"></span>\
+                </button>\
+                <ul id=\"db-list\" class=\"dropdown-menu\">\
+                </ul>\
+              </div>\
+            </form>\
+          </div>\
+          <div class=\"col-lg-4\">\
+            <form class=\"form-inline\">\
+              <label>choose a table:</label>\
+              <div class=\"btn-group\">\
+                <button id=\"current-tb\" type=\"button\" class=\"btn btn-default\"></button>\
+                <button type=\"button\" class=\"btn btn-default dropdown-toggle\" data-toggle=\"dropdown\">\
+                  <span class=\"caret\"></span>\
+                </button>\
+                <ul id=\"tb-list\" class=\"dropdown-menu\">\
+                </ul>\
+              </div>\
+            </form>\
+          </div>\
         </div>\
       </div>\
     </div>\
