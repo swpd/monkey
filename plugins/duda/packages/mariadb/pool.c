@@ -232,7 +232,7 @@ mariadb_conn_t *mariadb_pool_get_conn(duda_global_t *pool_key, duda_request_t *d
                 return NULL;
             }
 
-            ret = mariadb_async_handle_connect(conn, connect_cb);
+            ret = mariadb_async_handle_connect(conn, cb);
             if (ret != MARIADB_OK) {
                 return NULL;
             }
