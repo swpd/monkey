@@ -315,8 +315,8 @@ void mariadb_async_handle_release(mariadb_conn_t* conn, int status)
  * @METHOD_PARAM: query_str The SQL statement string of this query.
  * @METHOD_PARAM: result_cb The callback function that will take actions when the result set of this query is available.
  * @METHOD_PARAM: row_cb The callback function that will take actions when every row of the result set is fetched.
- * @METHOD_PARAM: privdata: The user defined private data that will be passed to callback.
  * @METHOD_PARAM: end_cb The callback function that will take actions after all the row in the result set are fetched.
+ * @METHOD_PARAM: privdata: The user defined private data that will be passed to callback.
  * @METHOD_RETURN: MAIRADB_OK on success, or MARIADB_ERR on failure.
  */
 
