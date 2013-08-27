@@ -88,6 +88,19 @@ static inline postgresql_pool_config_t *__postgresql_pool_get_config(duda_global
     return config;
 }
 
+/*
+ * @METHOD_NAME: create_pool_params
+ * @METHOD_DESC: Create a connection pool per thread for connection sharing with the given parameters. It must be called within the function `duda_main()' of a Duda web service.
+ * @METHOD_PROTO: int create_pool_params(duda_global_t *pool_key, int min_size, int max_size, const char * const *keys, const char * const *values, int expand_dbname)
+ * @METHOD_PARAM: pool_key The pointer that refers to the global key definition of a pool.
+ * @METHOD_PARAM: min_size The minimum number of connections in the pool.
+ * @METHOD_PARAM: max_size The maximum number of connections in the pool.
+ * @METHOD_PARAM: keys A NULL-terminated string array that stands for the keywords you want to customize. If the array is empty, then it will try to connect the server with default paramter keywords. If any keyword is unspecified, then the corresponding environment variable is checked. The currently recognized parameter key words are listed <a href="http://www.postgresql.org/docs/9.2/static/libpq-connect.html#LIBPQ-PARAMKEYWORDS">here</a>.
+ * @METHOD_PARAM: values A NULL-terminated strin array that gives the corresponding values for each keyword in the keys array.
+ * @METHOD_PARAM: expand_dbname A flag that determines whether the dbname key word value is allowed to be recognized as a connection string. Use zero to disable it or non-zero to enable it.
+ * @METHOD_RETURN: POSTGRESQL_OK on success, or POSTGRESQL_ERR on failure.
+ */
+
 int postgresql_pool_params_create(duda_global_t *pool_key, int min_size, int max_size,
                                   const char * const *keys, const char * const *values,
                                   int expand_dbname)
@@ -140,6 +153,17 @@ int postgresql_pool_params_create(duda_global_t *pool_key, int min_size, int max
     return POSTGRESQL_OK;
 }
 
+/*
+ * @METHOD_NAME: create_pool_uri
+ * @METHOD_DESC: Create a connection pool per thread for connection sharing with the given connection string. It must be called within the function `duda_main()' of a Duda web service.
+ * @METHOD_PROTO: int create_pool_uri(duda_global_t *pool_key, int min_size, int max_size, const char *uri)
+ * @METHOD_PARAM: pool_key The pointer that refers to the global key definition of a pool.
+ * @METHOD_PARAM: min_size The minimum number of connections in the pool.
+ * @METHOD_PARAM: max_size The maximum number of connections in the pool.
+ * @METHOD_PARAM: uri The string which specifies the connection parameters and their values. There are two accepted formats for these strings: plain keyword = value strings and RFC 3986 URIs. For full reference of the connection strings please consult the official <a href="http://www.postgresql.org/docs/9.2/static/libpq-connect.html#LIBPQ-CONNSTRING">documentation</a> of PostgreSQL.
+ * @METHOD_RETURN: POSTGRESQL_OK on success, or POSTGRESQL_ERR on failure.
+ */
+
 int postgresql_pool_uri_create(duda_global_t *pool_key, int min_size, int max_size,
                                const char *uri)
 {
@@ -166,6 +190,16 @@ int postgresql_pool_uri_create(duda_global_t *pool_key, int min_size, int max_si
     mk_list_add(&config->_head, &postgresql_pool_config_list);
     return POSTGRESQL_OK;
 }
+
+/*
+ * @METHOD_NAME: get_conn
+ * @METHOD_DESC: Get a PostgreSQL connection from a connection pool. If all the connections in a pool are currently used, the pool will spawn more connections as long as the pool size don't exceed the maximum.
+ * @METHOD_PROTO: postgresql_conn_t *get_conn(duda_global_t *pool_key, duda_request_t *dr, postgresql_connect_cb *cb)
+ * @METHOD_PARAM: pool_key The pointer that refers to the global key definition of a pool.
+ * @METHOD_PARAM: dr The request context information hold by a duda_request_t type.
+ * @METHOD_PARAM: cb The callback function that will take actions when a connection success or fail to establish.
+ * @METHOD_RETURN: A PostgreSQL connection on success, or NULL on failure.
+ */
 
 postgresql_conn_t *postgresql_pool_get_conn(duda_global_t *pool_key, duda_request_t *dr,
                                             postgresql_connect_cb *cb)

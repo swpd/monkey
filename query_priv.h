@@ -64,6 +64,14 @@ postgresql_query_t *postgresql_query_init();
 
 void postgresql_query_free(postgresql_query_t *query);
 
+/*
+ * @METHOD_NAME: abort
+ * @METHOD_DESC: Abort a query.
+ * @METHOD_PROTO: void abort(postgresql_query_t *query)
+ * @METHOD_PARAM: query The query to be aborted.
+ * @METHOD_RETURN: None.
+ */
+
 static inline void postgresql_query_abort(postgresql_query_t *query)
 {
     query->abort = QUERY_ABORT_YES;
