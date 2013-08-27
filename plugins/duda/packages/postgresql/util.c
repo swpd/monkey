@@ -25,6 +25,16 @@
 #include "connection_priv.h"
 #include "util.h"
 
+/*
+ * @METHOD_NAME: escape_literal
+ * @METHOD_DESC: Escape a string for use within an SQL command. This is useful when inserting data values as literal constants in SQL commands.
+ * @METHOD_PROTO: char *escape_literal(postgresql_conn_t *conn, const char *str, size_t length)
+ * @METHOD_PARAM: conn The PostgreSQL connection handle, it must be a valid, open connection.
+ * @METHOD_PARAM: str The literal string to be escaped.
+ * @METHOD_PARAM: length The length of parameter str.
+ * @METHOD_RETURN: On success an escaped version of the str parameter in memory allocated with malloc() is returned. This memory should be freed using postgresql->free() when the result is no longer needed. On error it will return NULL.
+ */
+
 char *postgresql_util_escape_literal(postgresql_conn_t *conn, const char *str,
                                      size_t length)
 {
@@ -35,6 +45,16 @@ char *postgresql_util_escape_literal(postgresql_conn_t *conn, const char *str,
     return escaped;
 }
 
+/*
+ * @METHOD_NAME: escape_identifier
+ * @METHOD_DESC:  Escape a string for use as an SQL identifier, such as a table, column, or function name. This is useful when a user-supplied identifier might contain special characters that would otherwise not be interpreted as part of the identifier by the SQL parser, or when the identifier might contain upper case characters whose case should be preserved.
+ * @METHOD_PROTO: char *escape_identifier(postgresql_conn_t *conn, const char *str, size_t length)
+ * @METHOD_PARAM: conn The PostgreSQL connection handle, it must be a valid, open connection.
+ * @METHOD_PARAM: str The identifier string to be escaped.
+ * @METHOD_PARAM: length The length of parameter str.
+ * @METHOD_RETURN: On success an escaped version of the str parameter in memory allocated with malloc() is returned. This memory should be freed using postgresql->free() when the result is no longer needed. On error it will return NULL.
+ */
+
 char *postgresql_util_escape_identifier(postgresql_conn_t *conn, const char *str,
                                         size_t length)
 {
@@ -44,6 +64,17 @@ char *postgresql_util_escape_identifier(postgresql_conn_t *conn, const char *str
     }
     return escaped;
 }
+
+/*
+ * @METHOD_NAME: escape_binary
+ * @METHOD_DESC: Escape binary data for use within an SQL command.
+ * @METHOD_PROTO: unsigned char *escape_binary(postgresql_conn_t *conn, const unsigned char *from, size_t from_length, size_t *to_length)
+ * @METHOD_PARAM: conn The PostgreSQL connection handle, it must be a valid, open connection.
+ * @METHOD_PARAM: from The string to be escaped.
+ * @METHOD_PARAM: from_length The number of bytes in this binary string.
+ * @METHOD_PARAM: to_length A variable that will hold the resultant escaped string length.
+ * @METHOD_RETURN: On success an escaped version of the from parameter binary string in memory allocated with malloc() is returned. This memory should be freed using postgresql->free() when the result is no longer needed. On error it will return NULL.
+ */
 
 unsigned char *postgresql_util_escape_binary(postgresql_conn_t *conn,
                                              const unsigned char *from,
@@ -57,11 +88,28 @@ unsigned char *postgresql_util_escape_binary(postgresql_conn_t *conn,
     return escaped;
 }
 
+/*
+ * @METHOD_NAME: unescape_binary
+ * @METHOD_DESC: Convert a string representation of binary data into binary data, it is the reverse of method escape_binary.
+ * @METHOD_PROTO: unsigned char *unescape_binary(const unsigned char *from, size_t *to_length)
+ * @METHOD_PARAM: from The text representation of binary data to be unescaped.
+ * @METHOD_PARAM: to_length A variable that will hold the resultant unescaped string length.
+ * @METHOD_RETURN: On success the binary representation of the from parameter sting in memory allocated with malloc() is returned. This memory should be freed using postgresql->free() when the result is no longer needed. On error it will return NULL.
+ */
+
 unsigned char *postgresql_util_unescape_binary(const unsigned char *from,
                                                size_t *to_length)
 {
     return PQunescapeBytea(from, to_length);
 }
+
+/*
+ * @METHOD_NAME: free
+ * @METHOD_DESC: Free memory allocated by libpq.
+ * @METHOD_PROTO: void free(void *ptr)
+ * @METHOD_PARAM: ptr The pointer to the memory space that will be freed.
+ * @METHOD_RETURN: None.
+ */
 
 void postgresql_util_free(void *ptr)
 {

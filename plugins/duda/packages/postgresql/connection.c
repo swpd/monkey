@@ -125,6 +125,18 @@ cleanup:
     FREE(conn);
 }
 
+/*
+ * @METHOD_NAME: connect
+ * @METHOD_DESC: Establish a new connection to the PostgreSQL server with the given parameters.
+ * @METHOD_PROTO: postgresql_conn_t *connect(duda_request_t *dr, postgresql_connect_cb *cb, const char * const *keys, const char * const *values, int expand_dbname)
+ * @METHOD_PARAM: dr The request context information hold by a duda_request_t type.
+ * @METHOD_PARAM: cb The callback function that will take actions when a connection success or fail to establish.
+ * @METHOD_PARAM: keys A NULL-terminated string array that stands for the keywords you want to customize. If the array is empty, then it will try to connect the server with default paramter keywords. If any keyword is unspecified, then the corresponding environment variable is checked. The currently recognized parameter key words are listed <a href="http://www.postgresql.org/docs/9.2/static/libpq-connect.html#LIBPQ-PARAMKEYWORDS">here</a>.
+ * @METHOD_PARAM: values A NULL-terminated strin array that gives the corresponding values for each keyword in the keys array.
+ * @METHOD_PARAM: expand_dbname A flag that determines whether the dbname key word value is allowed to be recognized as a connection string. Use zero to disable it or non-zero to enable it.
+ * @METHOD_RETURN: A newly initialized PostgreSQL connection handle on success, or NULL on failure.
+ */
+
 postgresql_conn_t *postgresql_conn_connect(duda_request_t *dr, postgresql_connect_cb *cb,
                                            const char * const *keys,
                                            const char * const *values, int expand_dbname)
@@ -141,6 +153,16 @@ postgresql_conn_t *postgresql_conn_connect(duda_request_t *dr, postgresql_connec
     return conn;
 }
 
+/*
+ * @METHOD_NAME: connect_uri
+ * @METHOD_DESC: Establish a new connection to the PostgreSQL server with the given connection string.
+ * @METHOD_PROTO: postgresql_conn_t *connect_uri(duda_request_t *dr, postgresql_connect_cb *cb, const char *uri)
+ * @METHOD_PARAM: dr The request context information hold by a duda_request_t type.
+ * @METHOD_PARAM: cb The callback function that will take actions when a connection success or fail to establish.
+ * @METHOD_PARAM: uri The string which specifies the connection parameters and their values. There are two accepted formats for these strings: plain keyword = value strings and RFC 3986 URIs. For full reference of the connection strings please consult the official <a href="http://www.postgresql.org/docs/9.2/static/libpq-connect.html#LIBPQ-CONNSTRING">documentation</a> of PostgreSQL.
+ * @METHOD_RETURN: A newly initialized PostgreSQL connection handle on success, or NULL on failure.
+ */
+
 postgresql_conn_t *postgresql_conn_connect_uri(duda_request_t *dr, postgresql_connect_cb *cb,
                                                const char *uri)
 {
@@ -155,6 +177,19 @@ postgresql_conn_t *postgresql_conn_connect_uri(duda_request_t *dr, postgresql_co
 
     return conn;
 }
+
+/*
+ * @METHOD_NAME: query
+ * @METHOD_DESC: Enqueue a new query to a PostgreSQL connection.
+ * @METHOD_PROTO: int query(postgresql_conn_t *conn, const char *query_str, postgresql_query_result_cb *result_cb, postgresql_query_row_cb *row_cb, postgresql_query_end_cb *end_cb, void *privdata)
+ * @METHOD_PARAM: conn The PostgreSQL connection handle.
+ * @METHOD_PARAM: query_str The SQL statement string of this query.
+ * @METHOD_PARAM: result_cb The callback function that will take actions when the result set of this query is available.
+ * @METHOD_PARAM: row_cb The callback function that will take actions when every row of the result set is fetched.
+ * @METHOD_PARAM: end_cb The callback function that will take actions after all the row in the result set are fetched.
+ * @METHOD_PARAM: privdata The user defined private data that will be passed to callback.
+ * @METHOD_RETURN: POSTGRESQL_OK on success, or POSTGRESQL_ERR on failure.
+ */
 
 int postgresql_conn_send_query(postgresql_conn_t *conn, const char *query_str,
                                postgresql_query_result_cb *result_cb,
@@ -181,6 +216,24 @@ int postgresql_conn_send_query(postgresql_conn_t *conn, const char *query_str,
     }
     return POSTGRESQL_OK;
 }
+
+/*
+ * @METHOD_NAME: query_params
+ * @METHOD_DESC: Enqueue a new query to a PostgreSQL connection, with the ability to pass parameters separately from the SQL command text.
+ * @METHOD_PROTO: int query_params(postgresql_conn_t *conn, const char *query_str, int n_params, const char * const *params_values, const int *params_lengths, const int *params_formats, int result_format, postgresql_query_result_cb *result_cb, postgresql_query_row_cb *row_cb, postgresql_query_end_cb *end_cb, void *privdata)
+ * @METHOD_PARAM: conn The PostgreSQL connection handle.
+ * @METHOD_PARAM: query_str The SQL statement string of this query. If parameters are used, they are referred to in the command string as $1, $2, etc.
+ * @METHOD_PARAM: n_params The number of parameters supplied; it is the length of the arrays paramValues[], paramLengths[], and paramFormats[]. (The array pointers can be NULL when nParams is zero.)
+ * @METHOD_PARAM: params_values The actual values of the parameters. A null pointer in this array means the corresponding parameter is null; otherwise the pointer points to a null-terminated text string (for text format) or binary data in the format expected by the server (for binary format).
+ * @METHOD_PARAM: params_lengths The actual data lengths of binary-format parameters. It is ignored for null parameters and text-format parameters. The array pointer can be null when there are no binary parameters.
+ * @METHOD_PARAM: params_formats This array specifies whether parameters are text (put a zero in the array entry for the corresponding parameter) or binary (put a one in the array entry for the corresponding parameter). If the array pointer is null then all parameters are presumed to be text strings.
+ * @METHOD_PARAM: result_format A flag that determines to fetch results in text or binary format. Use zero to obtain results in text format, or one to obtain results in binary format.
+ * @METHOD_PARAM: result_cb The callback function that will take actions when the result set of this query is available.
+ * @METHOD_PARAM: row_cb The callback function that will take actions when every row of the result set is fetched.
+ * @METHOD_PARAM: end_cb The callback function that will take actions after all the row in the result set are fetched.
+ * @METHOD_PARAM: privdata The user defined private data that will be passed to callback.
+ * @METHOD_RETURN: POSTGRESQL_OK on success, or POSTGRESQL_ERR on failure.
+ */
 
 int postgresql_conn_send_query_params(postgresql_conn_t *conn, const char *query_str,
                                       int n_params, const char * const *params_values,
@@ -234,6 +287,24 @@ int postgresql_conn_send_query_params(postgresql_conn_t *conn, const char *query
     }
     return POSTGRESQL_OK;
 }
+
+/*
+ * @METHOD_NAME: query_prepared
+ * @METHOD_DESC: Enqueue a new query to a PostgreSQL connection. This method is like method query, but the command to be executed is specified by naming a previously-prepared statement, instead of giving a query string. This feature allows commands that will be used repeatedly to be parsed and planned just once, rather than each time they are executed. The statement must have been prepared previously in the current session.
+ * @METHOD_PROTO: int query_prepared(postgresql_conn_t *conn, const char *stmt_name, int n_params, const char * const *params_values, const int *params_lengths, const int *params_formats, int result_format, postgresql_query_result_cb *result_cb, postgresql_query_row_cb *row_cb, postgresql_query_end_cb *end_cb, void *privdata)
+ * @METHOD_PARAM: conn The PostgreSQL connection handle.
+ * @METHOD_PARAM: stmt_name The name of a prepared statement.
+ * @METHOD_PARAM: n_params The number of parameters supplied; it is the length of the arrays paramValues[], paramLengths[], and paramFormats[]. (The array pointers can be NULL when nParams is zero.)
+ * @METHOD_PARAM: params_values The actual values of the parameters. A null pointer in this array means the corresponding parameter is null; otherwise the pointer points to a null-terminated text string (for text format) or binary data in the format expected by the server (for binary format).
+ * @METHOD_PARAM: params_lengths The actual data lengths of binary-format parameters. It is ignored for null parameters and text-format parameters. The array pointer can be null when there are no binary parameters.
+ * @METHOD_PARAM: params_formats This array specifies whether parameters are text (put a zero in the array entry for the corresponding parameter) or binary (put a one in the array entry for the corresponding parameter). If the array pointer is null then all parameters are presumed to be text strings.
+ * @METHOD_PARAM: result_format A flag that determines to fetch results in text or binary format. Use zero to obtain results in text format, or one to obtain results in binary format.
+ * @METHOD_PARAM: result_cb The callback function that will take actions when the result set of this query is available.
+ * @METHOD_PARAM: row_cb The callback function that will take actions when every row of the result set is fetched.
+ * @METHOD_PARAM: end_cb The callback function that will take actions after all the row in the result set are fetched.
+ * @METHOD_PARAM: privdata The user defined private data that will be passed to callback.
+ * @METHOD_RETURN: POSTGRESQL_OK on success, or POSTGRESQL_ERR on failure.
+ */
 
 int postgresql_conn_send_query_prepared(postgresql_conn_t *conn, const char *stmt_name,
                                         int n_params, const char * const *params_values,
@@ -312,6 +383,15 @@ void postgresql_conn_handle_release(postgresql_conn_t *conn, int status)
         FREE(conn);
     }
 }
+
+/*
+ * @METHOD_NAME: disconnect
+ * @METHOD_DESC: Disconnect a previous opened connection and release all the resource with it. It will ensure that all previous enqueued queries of that connection are processed before it is disconnected.
+ * @METHOD_PROTO: void disconnect(postgresql_conn_t *conn, postgresql_disconnect_cb *cb)
+ * @METHOD_PARAM: conn The PostgreSQL connection handle, it must be a valid, open connection.
+ * @METHOD_PARAM: cb The callback function that will take actions when a connection is disconnected.
+ * @METHOD_RETURN: None.
+ */
 
 void postgresql_conn_disconnect(postgresql_conn_t *conn, postgresql_disconnect_cb *cb)
 {
