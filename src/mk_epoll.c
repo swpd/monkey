@@ -68,7 +68,7 @@ int mk_epoll_state_init()
     return pthread_setspecific(mk_epoll_state_k, (void *) index);
 }
 
-static struct epoll_state *mk_epoll_state_get(int fd)
+struct epoll_state *mk_epoll_state_get(int fd)
 {
     struct epoll_state_index *index;
     struct epoll_state *es_entry;
@@ -375,13 +375,19 @@ int mk_epoll_change_mode(int efd, int fd, int mode, unsigned int behavior)
         break;
     case MK_EPOLL_WAKEUP:
         state = mk_epoll_state_get(fd);
-        if (state && state->mode == MK_EPOLL_SLEEP) {
+        if (!state) {
+            mk_warn("[FD %i] MK_EPOLL_WAKEUP error, invalid connection",
+                    fd);
+            return -1;
+        }
+        else if (state->mode == MK_EPOLL_SLEEP) {
             event.events = state->events;
             behavior     = state->behavior;
         }
         else {
-            mk_err("[FD %i] MK_EPOLL_WAKEUP error", fd);
-            exit(EXIT_FAILURE);
+            mk_warn("[FD %i] MK_EPOLL_WAKEUP error, current mode is %i",
+                    fd, state->mode);
+            return -1;
         }
         break;
     }
