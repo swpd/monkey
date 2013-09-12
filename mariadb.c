@@ -236,6 +236,9 @@ int mariadb_on_close(int fd, void *data)
         msg->err("[fd %i] Error: MariaDB Connection Not Found", fd);
     } else {
         event->delete(conn->fd);
+        if (conn->disconnect_cb) {
+            conn->disconnect_cb(conn, MARIADB_ERR, conn->dr);
+        }
         mk_list_del(&conn->_head);
         mariadb_conn_free(conn);
     }
