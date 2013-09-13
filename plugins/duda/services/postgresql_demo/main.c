@@ -6,46 +6,46 @@ DUDA_REGISTER("PostgreSQL package usage demonstration", "postgresql_demo");
 
 static inline void print_header(duda_request_t *dr)
 {
-    response->printf(dr, "\
-<!DOCTYPE html>\
-<html lang=\"en\">\
-<head>\
-  <meta charset=\"UTF-8\">\
-  <title>PostgreSQL Package Demo</title>\
-  <link rel=\"stylesheet\" href=\"//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css\">\
-  <style type=\"text/css\">\
-    body {\
-      position: relative;\
-      padding-top: 80px;\
-    }\
-  </style>\
-</head>\
-<body>\
-  <div class=\"navbar navbar-inverse navbar-fixed-top\">\
-    <div class=\"container\">\
-      <a href=\"#\" class=\"navbar-brand\">PostgreSQL Package</a>\
-      <ul class=\"nav navbar-nav\">\
-        <li id=\"home\">\
-          <a href=\"/postgresql_demo/postgresql/home/\">Home</a>\
-        </li>\
-        <li id=\"dashboard\">\
-          <a href=\"/postgresql_demo/postgresql/dashboard/\">Dashboard</a>\
-        </li>\
-      </ul>\
-    </div>\
+    response->printf(dr, "\n\
+<!DOCTYPE html>\n\
+<html lang=\"en\">\n\
+<head>\n\
+  <meta charset=\"UTF-8\">\n\
+  <title>PostgreSQL Package Demo</title>\n\
+  <link rel=\"stylesheet\" href=\"//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css\">\n\
+  <style type=\"text/css\">\n\
+    body {\n\
+      position: relative;\n\
+      padding-top: 80px;\n\
+    }\n\
+  </style>\n\
+</head>\n\
+<body>\n\
+  <div class=\"navbar navbar-inverse navbar-fixed-top\">\n\
+    <div class=\"container\">\n\
+      <a href=\"#\" class=\"navbar-brand\">PostgreSQL Package</a>\n\
+      <ul class=\"nav navbar-nav\">\n\
+        <li id=\"home\">\n\
+          <a href=\"/postgresql_demo/postgresql/home/\">Home</a>\n\
+        </li>\n\
+        <li id=\"dashboard\">\n\
+          <a href=\"/postgresql_demo/postgresql/dashboard/\">Dashboard</a>\n\
+        </li>\n\
+      </ul>\n\
+    </div>\n\
   </div>");
 }
 
 static inline void print_footer(duda_request_t *dr, const char *js)
 {
-    response->printf(dr, "\
-  <script src=\"//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js\"></script>\
+    response->printf(dr, "\n\
+  <script src=\"//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js\"></script>\n\
   <script src=\"//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js\"></script>");
     if (js) {
         response->printf(dr, js);
     }
-    response->printf(dr, "\
-</body>\
+    response->printf(dr, "\n\
+</body>\n\
 </html>");
 }
 
@@ -173,6 +173,31 @@ void cb_list_tables(duda_request_t *dr)
     postgresql->disconnect(conn, cb_on_disconnect);
 }
 
+void cb_row_nums(duda_request_t *dr)
+{
+    json_t *row_nums = json->create_array();
+    char *db = param->get(dr, 0);
+    char *table = param->get(dr, 1);
+    char uri[128];
+    char count_query[128];
+
+    response->http_status(dr, 200);
+    response->http_header_n(dr, "Content-Type: application/json", 30);
+    response->wait(dr);
+
+    sprintf(uri, "user=postgres password=foo dbname=%s", db);
+    postgresql_conn_t *conn = postgresql->connect_uri(dr, cb_on_connect, uri);
+    if (!conn) {
+        response->printf(dr, "No Connection Available\n");
+        response->cont(dr);
+        response->end(dr, NULL);
+    }
+
+    sprintf(count_query, "SELECT COUNT(*) FROM %s", table);
+    postgresql->query(conn, count_query, NULL, cb_ls_row_simple, cb_ls_end, (void *)row_nums);
+    postgresql->disconnect(conn, cb_on_disconnect);
+}
+
 void cb_list_rows(duda_request_t *dr)
 {
     json_t *row_root = json->create_object();
@@ -207,24 +232,24 @@ void cb_home_page(duda_request_t* dr)
     response->http_status(dr, 200);
     response->http_header_n(dr, "Content-Type: text/html", 23);
     print_header(dr);
-    response->printf(dr, "\
-  <div class=\"container\">\
-    <div class=\"jumbotron\">\
-      <h1>Non-blocking PostgreSQL Access</h1>\
-      <p>\
-        This is a Duda web service that demonstrates the usage of Duda PostgreSQL package.\
-        If you're interested in the package itself, please refer to\
-        <a href=\"https://github.com/swpd/duda_postgresql\">this</a>.\
-      </p>\
-      <p><a class=\"btn btn-primary btn-lg\" href=\"/postgresql_demo/postgresql/dashboard/\">Get Started »</a></p>\
-    </div>\
+    response->printf(dr, "\n\
+  <div class=\"container\">\n\
+    <div class=\"jumbotron\">\n\
+      <h1>Non-blocking PostgreSQL Access</h1>\n\
+      <p>\n\
+        This is a Duda web service that demonstrates the usage of Duda PostgreSQL package.\n\
+        If you're interested in the package itself, please refer to\n\
+        <a href=\"https://github.com/swpd/duda_postgresql\">this</a>.\n\
+      </p>\n\
+      <p><a class=\"btn btn-primary btn-lg\" href=\"/postgresql_demo/postgresql/dashboard/\">Get Started »</a></p>\n\
+    </div>\n\
   </div>");
 
-    char *js = "\
-  <script>\
-    $(document).ready(function() {\
-      $('#home').addClass('active');\
-    });\
+    char *js = "\n\
+  <script>\n\
+    $(document).ready(function() {\n\
+      $('#home').addClass('active');\n\
+    });\n\
   </script>";
     print_footer(dr, js);
     response->end(dr, NULL);
@@ -235,98 +260,156 @@ void cb_dashboard(duda_request_t *dr)
     response->http_status(dr, 200);
     response->http_header_n(dr, "content-type: text/html", 23);
     print_header(dr);
-    response->printf(dr, "\
-  <div class=\"container\">\
-    <div class=\"panel panel-default\">\
-      <div class=\"panel-heading\">\
-        <h4 class=\"panel-title\">Dashboard</h4>\
-      </div>\
-      <div class=\"panel-body\">\
-        <div class=\"row\">\
-          <div class=\"col-lg-4\">\
-            <form class=\"form-inline\">\
-              <label>choose a database:</label>\
-              <div class=\"btn-group\">\
-                <button id=\"current-db\" type=\"button\" class=\"btn btn-default\"></button>\
-                <button type=\"button\" class=\"btn btn-default dropdown-toggle\" data-toggle=\"dropdown\">\
-                  <span class=\"caret\"></span>\
-                </button>\
-                <ul id=\"db-list\" class=\"dropdown-menu\">\
-                </ul>\
-              </div>\
-            </form>\
-          </div>\
-          <div class=\"col-lg-4\">\
-            <form class=\"form-inline\">\
-              <label>choose a table:</label>\
-              <div class=\"btn-group\">\
-                <button id=\"current-tb\" type=\"button\" class=\"btn btn-default\"></button>\
-                <button type=\"button\" class=\"btn btn-default dropdown-toggle\" data-toggle=\"dropdown\">\
-                  <span class=\"caret\"></span>\
-                </button>\
-                <ul id=\"tb-list\" class=\"dropdown-menu\">\
-                </ul>\
-              </div>\
-            </form>\
-          </div>\
-        </div>\
-      </div>\
-    </div>\
-    <table id=\"rows\" class=\"table table-bordered\">\
-    </table>\
+    response->printf(dr, "\n\
+  <div class=\"container\">\n\
+    <div class=\"panel panel-default\">\n\
+      <div class=\"panel-heading\">\n\
+        <h4 class=\"panel-title\">Dashboard</h4>\n\
+      </div>\n\
+      <div class=\"panel-body\">\n\
+        <div class=\"row\">\n\
+          <div class=\"col-lg-4 col-lg-offset-2\">\n\
+            <form class=\"form-inline\">\n\
+              <label>choose a database:</label>\n\
+              <div class=\"btn-group\">\n\
+                <button id=\"current-db\" type=\"button\" class=\"btn btn-default\"></button>\n\
+                <button type=\"button\" class=\"btn btn-default dropdown-toggle\" data-toggle=\"dropdown\">\n\
+                  <span class=\"caret\"></span>\n\
+                </button>\n\
+                <ul id=\"db-list\" class=\"dropdown-menu\">\n\
+                </ul>\n\
+              </div>\n\
+            </form>\n\
+          </div>\n\
+          <div class=\"col-lg-4\">\n\
+            <form class=\"form-inline\">\n\
+              <label>choose a table:</label>\n\
+              <div class=\"btn-group\">\n\
+                <button id=\"current-tb\" type=\"button\" class=\"btn btn-default\"></button>\n\
+                <button type=\"button\" class=\"btn btn-default dropdown-toggle\" data-toggle=\"dropdown\">\n\
+                  <span class=\"caret\"></span>\n\
+                </button>\n\
+                <ul id=\"tb-list\" class=\"dropdown-menu\">\n\
+                </ul>\n\
+              </div>\n\
+            </form>\n\
+          </div>\n\
+        </div>\n\
+      </div>\n\
+    </div>\n\
+    <div class=\"row\">\n\
+      <div class=\"col-lg-12\">\n\
+        <span style=\"display: none\" id=\"total_page\"></span>\n\
+        <span style=\"display: none\" id=\"current_page\"></span>\n\
+        <ul id=\"pager\" class=\"pager\">\n\
+        </ul>\n\
+      </div>\n\
+    </div>\n\
+    <table id=\"rows\" class=\"table table-bordered\">\n\
+    </table>\n\
   </div>");
 
-    char *js = "\
-  <script>\
-    $(document).ready(function() {\
-      $('#dashboard').addClass('active');\
-      $.ajax({\
-        url: '/postgresql_demo/postgresql/list-databases/',\
-        success: function(data) {\
-          for (var i in data) {\
-            $('#db-list').append('<li><a>' + data[i] + '</a></li>');\
-          }\
-          $('#db-list li').click(function() {\
-            var db = $(this).text();\
-            $('#current-db').text(db);\
-            $.ajax({\
-              url: '/postgresql_demo/postgresql/list-tables/' + db + '/',\
-              success: function(data) {\
-                $('#tb-list').children().remove();\
-                for (var i in data) {\
-                  $('#tb-list').append('<li><a>' + data[i] + '</a></li>');\
-                }\
-                $('#tb-list li').click(function() {\
-                    var db = $('#current-db').text();\
-                    var tb = $(this).text();\
-                    $('#current-tb').text(tb);\
-                    $.ajax({\
-                      url: '/postgresql_demo/postgresql/list-rows/' + db + '/' + tb + '/1/',\
-                      success: function(data) {\
-                        $('#rows').children().remove();\
-                        $('#rows').append('<tr>');\
-                        for (var i in data.fields) {\
-                          $('#rows tr').last().append('<td>' + data.fields[i] + '</td>');\
-                        }\
-                        $('#rows').append('</tr>');\
-                        for (var ri in data.rows) {\
-                          $('#rows').append('<tr>');\
-                          for (var fi in data.fields) {\
-                            $('#rows tr').last().append('<td>' + data.rows[ri][data.fields[fi]] + '</td>');\
-                          }\
-                          $('#rows').append('</tr>');\
-                        }\
-                      }\
-                    });\
-                });\
-                $('#tb-list li').first().click();\
-              }\
-            });\
-          });\
-          $('#db-list li').first().click();\
-        }\
-      });\
-    });\
+    char *js = "\n\
+  <script>\n\
+    $(document).ready(function() {\n\
+      $('#dashboard').addClass('active');\n\
+      $.ajax({\n\
+        url: '/postgresql_demo/postgresql/list-databases/',\n\
+        success: function(data) {\n\
+          for (var i in data) {\n\
+            $('#db-list').append('<li><a>' + data[i] + '</a></li>');\n\
+          }\n\
+          $('#db-list li').click(function() {\n\
+            var db = $(this).text();\n\
+            $('#current-db').text(db);\n\
+            $.ajax({\n\
+              url: '/postgresql_demo/postgresql/list-tables/' + db + '/',\n\
+              success: function(data) {\n\
+                $('#tb-list').children().remove();\n\
+                for (var i in data) {\n\
+                  $('#tb-list').append('<li><a>' + data[i] + '</a></li>');\n\
+                }\n\
+                $('#tb-list li').click(function() {\n\
+                  var db = $('#current-db').text();\n\
+                  var tb = $(this).text();\n\
+                  $('#current-tb').text(tb);\n\
+                  $.ajax({\n\
+                    url: '/postgresql_demo/postgresql/row-nums/' + db + '/' + tb + '/',\n\
+                    success: function(data) {\n\
+                      $('#pager').children().remove();\n\
+                      $('#pager').append('<li tag=\"1\"><a>&laquo;</a></li>');\n\
+                      $('#pager').append('<li><a>prev</a></li>');\n\
+                      var page_nums = Math.ceil(parseInt(data[0]) / 20);\n\
+                      $('#total_page').text(page_nums);\n\
+                      var end = page_nums <= 9 ? page_nums : 9;\n\
+                      for (var i = 1; i <= end; ++i) {\n\
+                        $('#pager').append('<li tag=\"' + i + '\"><a>' + i + '</a></li>');\n\
+                      }\n\
+                      $('#pager').append('<li><a>next</a></li>');\n\
+                      $('#pager').append('<li tag=\"' + page_nums + '\"><a>&raquo;</a></li>');\n\
+                      function pager_cb() {\n\
+                        var selected = $(this).text();\n\
+                        var total_page = parseInt($('#total_page').text());\n\
+                        var page;\n\
+                        if (selected === 'prev') {\n\
+                          var current_page = parseInt($('#current_page').text());\n\
+                          page = current_page - 1 >= 1 ? current_page - 1 : 1;\n\
+                        } else if (selected === 'next'){\n\
+                          var current_page = parseInt($('#current_page').text());\n\
+                          page = current_page + 1 <= total_page ? current_page + 1 : total_page;\n\
+                        } else {\n\
+                          page = parseInt($(this).attr('tag'));\n\
+                        }\n\
+                        $('#current_page').text(page);\n\
+                        var start = page - 4 >= 1 ? page - 4 : 1;\n\
+                        var end = page + 4 <= total_page ? page + 4 : total_page\n\
+                        if (start == 1) {\n\
+                          end = total_page <= 9 ? total_page : 9;\n\
+                        } else if (end == total_page) {\n\
+                          start = total_page > 9 ? total_page - 8 : 1;\n\
+                        }\n\
+                        $('#pager').children().remove();\n\
+                        $('#pager').append('<li tag=\"1\"><a>&laquo;</a></li>');\n\
+                        $('#pager').append('<li><a>prev</a></li>');\n\
+                        for (var i = start; i <= end; ++i) {\n\
+                          $('#pager').append('<li tag=\"' + i + '\"><a>' + i + '</a></li>');\n\
+                        }\n\
+                        $('#pager').append('<li><a>next</a></li>');\n\
+                        $('#pager').append('<li tag=\"' + total_page + '\"><a>&raquo;</a></li>');\n\
+                        $('#pager li[tag=\"' + page + '\"]').addClass('disabled');\n\
+                        $('#pager li').click(pager_cb);\n\
+                        $.ajax({\n\
+                          url: '/postgresql_demo/postgresql/list-rows/' + db + '/' + tb + '/' + page + '/',\n\
+                          success: function(data) {\n\
+                            $('#rows').children().remove();\n\
+                            $('#rows').append('<tr>');\n\
+                            for (var i in data.fields) {\n\
+                              $('#rows tr').last().append('<td>' + data.fields[i] + '</td>');\n\
+                            }\n\
+                            $('#rows').append('</tr>');\n\
+                            for (var ri in data.rows) {\n\
+                              $('#rows').append('<tr>');\n\
+                              for (var fi in data.fields) {\n\
+                                $('#rows tr').last().append('<td>' + data.rows[ri][data.fields[fi]] + '</td>');\n\
+                              }\n\
+                              $('#rows').append('</tr>');\n\
+                            }\n\
+                          }\n\
+                        });\n\
+                      }\n\
+                      $('#pager li').click(pager_cb);\n\
+                      $('#pager li').first().click();\n\
+                    }\n\
+                  });\n\
+                });\n\
+                $('#tb-list li').first().click();\n\
+              }\n\
+            });\n\
+          });\n\
+          $('#db-list li').first().click();\n\
+        }\n\
+      });\n\
+    });\n\
   </script>";
     print_footer(dr, js);
     response->end(dr, NULL);
@@ -354,6 +437,13 @@ int duda_main()
 
     method = map->method_new("list-tables", "cb_list_tables", 1);
     params = map->param_new("database", 64);
+    map->method_add_param(params, method);
+    map->interface_add_method(method, if_system);
+
+    method = map->method_new("row-nums", "cb_row_nums", 2);
+    params = map->param_new("database", 64);
+    map->method_add_param(params, method);
+    params = map->param_new("table", 64);
     map->method_add_param(params, method);
     map->interface_add_method(method, if_system);
 
