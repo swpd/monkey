@@ -64,11 +64,9 @@ postgresql_object_t *get_postgresql_api()
     return postgresql;
 }
 
-duda_package_t *duda_package_main(struct duda_api_objects *api)
+duda_package_t *duda_package_main()
 {
     duda_package_t *dpkg;
-
-    duda_package_init();
 
     duda_global_init(&postgresql_conn_list, NULL, NULL);
     mk_list_init(&postgresql_pool_config_list);
