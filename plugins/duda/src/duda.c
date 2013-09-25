@@ -21,7 +21,6 @@
 
 #define _GNU_SOURCE
 #include <dlfcn.h>
-#include <sys/eventfd.h>
 
 #include "MKPlugin.h"
 #include "duda.h"
@@ -148,7 +147,7 @@ int duda_service_register(struct duda_api_objects *api, struct web_service *ws)
     struct duda_map_static_cb *static_cb;
 
     /* Load and invoke duda_main() */
-    service_init = (int (*)()) duda_load_symbol(ws->handler, "_duda_bootstrap");
+    service_init = (int (*)()) duda_load_symbol(ws->handler, "_duda_bootstrap_main");
     if (!service_init) {
         mk_err("Duda: invalid web service %s", ws->name.data);
         exit(EXIT_FAILURE);
@@ -167,12 +166,15 @@ int duda_service_register(struct duda_api_objects *api, struct web_service *ws)
         /* Lookup mapped callbacks */
         mk_list_foreach(head_urls, ws->map_urls) {
             static_cb = mk_list_entry(head_urls, struct duda_map_static_cb, _head);
-            static_cb->callback = duda_load_symbol(ws->handler, static_cb->cb_name);
             if (!static_cb->callback) {
-                mk_err("Static Map: you have set the callback '%s' through\n"
-                       "a static map, but the function could not be located. Aborting",
-                       static_cb->cb_name);
-                exit(EXIT_FAILURE);
+                static_cb->callback = duda_load_symbol(ws->handler, static_cb->cb_name);
+                if (!static_cb->callback) {
+                    mk_err("Static Map: you have set the callback '%s' through "
+                           "a static map, but the function could not be located. "
+                           "Aborting",
+                           static_cb->cb_name);
+                    exit(EXIT_FAILURE);
+                }
             }
         }
 
@@ -385,10 +387,17 @@ int _mkp_event_timeout(int sockfd)
     return MK_PLUGIN_RET_EVENT_CONTINUE;
 }
 
-/* Thread context initialization */
+/*
+ * Thread context initialization: for each thread worker, this function
+ * is invoked, including the workers defined through the worker->spawn() method.
+ *
+ * When running in a user-defined thread, some things will not be initialized
+ * properly such as the event file descriptor. Not an issue.
+ */
 void _mkp_core_thctx()
 {
-    int event_fd;
+    int rc;
+    int fds[2];
     char *logger_fmt_cache;
     struct mk_list *head_vs, *head_ws, *head_gl;
     struct mk_list *list_events_write;
@@ -400,14 +409,13 @@ void _mkp_core_thctx()
     duda_global_t *entry_gl;
     void *data;
 
-
     /* Events write list */
-    list_events_write = mk_api->mem_alloc(sizeof(struct mk_list));
+    list_events_write = mk_api->mem_alloc_z(sizeof(struct mk_list));
     mk_list_init(list_events_write);
     pthread_setspecific(duda_global_events_write, (void *) list_events_write);
 
     /* Events */
-    events_list = mk_api->mem_alloc(sizeof(struct mk_list));
+    events_list = mk_api->mem_alloc_z(sizeof(struct mk_list));
     mk_list_init(events_list);
     pthread_setspecific(duda_events_list, (void *) events_list);
 
@@ -416,23 +424,34 @@ void _mkp_core_thctx()
     pthread_setspecific(duda_global_dr_list, (void *) dr_list);
 
     /* Logger FMT cache */
-    logger_fmt_cache = mk_api->mem_alloc(512);
+    logger_fmt_cache = mk_api->mem_alloc_z(512);
     pthread_setspecific(duda_logger_fmt_cache, (void *) logger_fmt_cache);
 
-   /* Register a Linux eventfd into the Events interface */
-    event_fd = eventfd(0, 0);
-    mk_api->socket_set_nonblocking(event_fd);
-    esc = mk_api->mem_alloc(sizeof(struct duda_event_signal_channel));
-    esc->fd = event_fd;
-
-    /* Safe initialization */
-    pthread_mutex_lock(&duda_mutex_thctx);
-    mk_list_add(&esc->_head, &duda_event_signals_list);
-    pthread_mutex_unlock(&duda_mutex_thctx);
+    /* Register a Linux pipe into the Events interface */
+    if (pipe(fds) == -1) {
+        mk_err("Error creating thread signal pipe. Aborting.");
+        exit(EXIT_FAILURE);
+    }
 
     /* Register the event file descriptor in the events interface */
-    duda_event_add(event_fd, DUDA_EVENT_READ, DUDA_EVENT_LEVEL_TRIGGERED,
-                   duda_event_fd_read, NULL, NULL, NULL, NULL, NULL);
+    rc = duda_event_add(fds[0], DUDA_EVENT_READ, DUDA_EVENT_LEVEL_TRIGGERED,
+                        duda_event_fd_read, NULL, NULL, NULL, NULL, NULL);
+    if (rc == 0) {
+        mk_api->socket_set_nonblocking(fds[1]);
+        esc = mk_api->mem_alloc(sizeof(struct duda_event_signal_channel));
+        esc->fd_r = fds[0];
+        esc->fd_w = fds[1];
+
+        /* Safe initialization */
+        pthread_mutex_lock(&duda_mutex_thctx);
+        mk_list_add(&esc->_head, &duda_event_signals_list);
+        pthread_mutex_unlock(&duda_mutex_thctx);
+    }
+    else {
+        close(fds[0]);
+        close(fds[1]);
+    }
+
 
     /*
      * Load global data if applies, this is toooo recursive, we need to go through
@@ -526,17 +545,18 @@ int _mkp_init(struct plugin_api **api, char *confdir)
 {
     mk_api = *api;
 
-    /* Load configuration */
-    duda_conf_main_init(confdir);
-    duda_conf_vhost_init();
-    duda_load_services();
-
     /* Global data / Thread scope */
     pthread_key_create(&duda_events_list, NULL);
     pthread_key_create(&duda_global_events_write, NULL);
     pthread_key_create(&duda_global_dr_list, NULL);
 
     mk_list_init(&duda_event_signals_list);
+
+    /* Load configuration */
+    duda_conf_main_init(confdir);
+    duda_conf_vhost_init();
+
+    duda_load_services();
 
     /* Initialize Logger internals */
     duda_logger_init();
@@ -667,7 +687,6 @@ int duda_request_parse(struct session_request *sr,
     }
 
     if (last_field < MAP_WS_METHOD) {
-        console_debug(dr, "invalid method");
         return -1;
     }
 
@@ -801,11 +820,17 @@ int duda_service_run(struct plugin *plugin,
 
         dr->socket = cs->socket;
         dr->cs = cs;
-        dr->sr = sr;
 
         /* Register */
         duda_dr_list_add(dr);
     }
+
+    /*
+     * set the new Monkey request contexts: if it comes from a keepalive
+     * session the previous session_request is not longer valid, we need
+     * to set the new one.
+     */
+    dr->sr = sr;
 
     /* method invoked */
     dr->_method = NULL;
@@ -819,6 +844,7 @@ int duda_service_run(struct plugin *plugin,
 
     /* statuses */
     dr->_st_http_content_length = -2;      /* not set */
+    dr->_st_http_headers_off  = MK_FALSE;
     dr->_st_http_headers_sent = MK_FALSE;
     dr->_st_body_writes = 0;
 

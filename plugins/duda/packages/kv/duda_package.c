@@ -39,6 +39,7 @@ struct duda_api_kv *get_kv_api()
     /* Alloc object */
     kv = malloc(sizeof(struct duda_api_kv));
     kv->init           = kv_init;
+    kv->close          = unqlite_close;
     kv->store          = unqlite_kv_store;
     kv->store_fmt      = unqlite_kv_store_fmt;
     kv->append         = unqlite_kv_append;
@@ -62,12 +63,9 @@ struct duda_api_kv *get_kv_api()
     return kv;
 }
 
-duda_package_t *duda_package_main(struct duda_api_objects *api)
+duda_package_t *duda_package_main()
 {
     duda_package_t *dpkg;
-
-    /* Initialize package internals */
-    duda_package_init();
 
     /* Package object */
     dpkg = monkey->mem_alloc(sizeof(duda_package_t));

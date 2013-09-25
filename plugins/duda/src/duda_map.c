@@ -128,6 +128,34 @@ int duda_map_static_add(const char *path,  const char *cb_name, struct mk_list *
     st->path     = mk_api->str_dup(path);
     st->path_len = strlen(path);
     st->cb_name  = mk_api->str_dup(cb_name);
+    st->callback = NULL;
+
+    mk_list_add(&st->_head, list);
+
+    return 0;
+}
+
+/*
+ * @METHOD_NAME: static_add_ref
+ * @METHOD_DESC: It maps a static URL address to a specific callback function by reference
+ * @METHOD_PARAM: path    the URL path, e.g: "/something".
+ * @METHOD_PARAM: callback the callback function reference
+ * @METHOD_PROTO: int static_add_ref(const char *path, void (*callback) (duda_request_t *dr))
+ * @METHOD_RETURN: Upon successful completion it returns 0, on error returns -1.
+ */
+int duda_map_static_add_ref(const char *path,  void (*cb) (duda_request_t *dr),
+                            struct mk_list *list)
+{
+    struct duda_map_static_cb *st;
+
+    st = mk_api->mem_alloc(sizeof(struct duda_map_static_cb));
+    if (!st) {
+        return -1;
+    }
+
+    st->path     = mk_api->str_dup(path);
+    st->path_len = strlen(path);
+    st->callback = cb;
 
     mk_list_add(&st->_head, list);
 
@@ -270,7 +298,8 @@ struct duda_api_map *duda_map_object()
     struct duda_api_map *obj;
 
     obj = mk_api->mem_alloc(sizeof(struct duda_api_map));
-    obj->_static_add = duda_map_static_add;
+    obj->_static_add     = duda_map_static_add;
+    obj->_static_add_ref = duda_map_static_add_ref;
     obj->_add_interface = duda_map_add_interface;
     obj->interface_new = duda_map_interface_new;
     obj->interface_add_method = duda_map_interface_add_method;
