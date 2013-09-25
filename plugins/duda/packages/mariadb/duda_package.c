@@ -58,11 +58,9 @@ mariadb_object_t *get_mariadb_api()
     return mariadb;
 }
 
-duda_package_t *duda_package_main(struct duda_api_objects *api)
+duda_package_t *duda_package_main()
 {
     duda_package_t *dpkg;
-
-    duda_package_init();
 
     duda_global_init(&mariadb_conn_list, NULL, NULL);
     mk_list_init(&mariadb_pool_config_list);
