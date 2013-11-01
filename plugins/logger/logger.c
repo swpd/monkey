@@ -197,7 +197,7 @@ static void mk_logger_worker_init(void *args)
 
             flog = open(target, O_WRONLY | O_CREAT | O_CLOEXEC, 0644);
             if (mk_unlikely(flog == -1)) {
-                mk_warn("Could not open logfile '%s'", target);
+                mk_warn("Could not open logfile '%s' (%s)", target, strerror(errno));
 
                 int consumed = 0;
                 char buf[255];
@@ -285,7 +285,7 @@ static void mk_logger_print_details(void)
     current = localtime(&now);
     printf("[%i/%02i/%02i %02i:%02i:%02i] Monkey Started\n",
            current->tm_year + 1900,
-           current->tm_mon,
+           current->tm_mon + 1,
            current->tm_mday,
            current->tm_hour,
            current->tm_min,
@@ -570,6 +570,9 @@ int _mkp_stage_40(struct client_session *cs, struct session_request *sr)
             return 0;
         }
 
+        /* For unknown errors. Needs to exist until iov_send. */
+        char err_str[80];
+
         switch (http_status) {
         case MK_CLIENT_BAD_REQUEST:
             mk_api->iov_add_entry(iov,
@@ -648,7 +651,25 @@ int _mkp_stage_40(struct client_session *cs, struct session_request *sr)
                                   error_msg_505.len,
                                   mk_logger_iov_lf, MK_IOV_NOT_FREE_BUF);
             break;
+        default:
+            {
+            int len = snprintf(err_str, 80, "[error %u] (no description)", http_status);
+            err_str[79] = '\0';
+            if (len > 79) len = 79;
+
+            mk_api->iov_add_entry(iov,
+                                  err_str,
+                                  len,
+                                  mk_logger_iov_space, MK_IOV_NOT_FREE_BUF);
+
+            mk_api->iov_add_entry(iov,
+                                  sr->uri.data,
+                                  sr->uri.len,
+                                  mk_logger_iov_lf, MK_IOV_NOT_FREE_BUF);
+            }
+            break;
         }
+
         /* Write iov array to pipe */
         mk_api->iov_send(target->fd_error[1], iov);
     }
