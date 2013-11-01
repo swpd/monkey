@@ -654,7 +654,6 @@ int duda_request_parse(struct session_request *sr,
             dr->method.len     = val_len;
             last_field = MAP_WS_PARAM;
             if(duda_request_set_method(dr) == -1) {
-                console_debug(dr, "Error: unknown method");
                 return -1;
             }
             allowed_params = dr->_method->num_params;
@@ -819,7 +818,6 @@ int duda_service_run(struct plugin *plugin,
         dr->plugin = plugin;
 
         dr->socket = cs->socket;
-        dr->cs = cs;
 
         /* Register */
         duda_dr_list_add(dr);
@@ -830,6 +828,7 @@ int duda_service_run(struct plugin *plugin,
      * session the previous session_request is not longer valid, we need
      * to set the new one.
      */
+    dr->cs = cs;
     dr->sr = sr;
 
     /* method invoked */
